@@ -1,0 +1,2009 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Hockey Trainer">
+<meta name="theme-color" content="#0a1628">
+<link rel="manifest" href="data:application/json,{%22name%22:%22Hockey%20Target%20Trainer%22,%22short_name%22:%22Hockey%20Trainer%22,%22start_url%22:%22.%22,%22display%22:%22fullscreen%22,%22background_color%22:%22%230a1628%22,%22theme_color%22:%22%230a1628%22,%22orientation%22:%22any%22,%22icons%22:[{%22src%22:%22data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='192'%20height='192'%3E%3Crect%20width='192'%20height='192'%20rx='38'%20fill='%230a1628'/%3E%3Ccircle%20cx='96'%20cy='96'%20r='90'%20fill='%230a1628'%20stroke='%2300d4ff'%20stroke-width='5'/%3E%3Ccircle%20cx='96'%20cy='96'%20r='36'%20fill='%23181818'%20stroke='%23555'%20stroke-width='3'/%3E%3C/svg%3E%22,%22sizes%22:%22192x192%22,%22type%22:%22image/svg+xml%22}]}">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='192' height='192'><rect width='192' height='192' rx='38' fill='%230a1628'/><circle cx='96' cy='96' r='90' fill='%230a1628' stroke='%2300d4ff' stroke-width='5'/><circle cx='96' cy='96' r='36' fill='%23181818' stroke='%23555' stroke-width='3'/><line x1='120' y1='35' x2='67' y2='138' stroke='%2300d4ff' stroke-width='9' stroke-linecap='round'/><line x1='67' y1='138' x2='42' y2='146' stroke='%2300d4ff' stroke-width='9' stroke-linecap='round'/></svg>">
+<title>Hockey Target Trainer</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{
+  --rink:#0a1628;--mid:#0d2240;--blue:#1e6bc4;--hit:#00ff88;--acc:#00d4ff;
+  --warn:#ff6b35;--red:#c41e1e;--floor:#1a2a10;--floorAcc:#7fff3a;
+}
+body{background:#000;color:#fff;font-family:'Helvetica Neue',Arial,sans-serif;height:100dvh;overflow:hidden;display:flex;flex-direction:column;}
+
+/* ══════════════════════════════
+   LAUNCHER SCREEN
+══════════════════════════════ */
+#launcher{position:absolute;inset:0;background:linear-gradient(160deg,#060e1c 0%,#0a1a0a 60%,#060e1c 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;z-index:100;padding:24px;}
+#launcher h1{font-family:Impact,sans-serif;font-size:1.5rem;letter-spacing:3px;color:var(--acc);text-shadow:0 0 24px rgba(0,212,255,.5);margin-bottom:4px;text-align:center;}
+#launcher .sub{font-size:.72rem;color:#556;letter-spacing:2px;text-transform:uppercase;margin-bottom:32px;}
+.mode-cards{display:flex;flex-direction:column;gap:14px;width:100%;max-width:360px;}
+.mode-card{border-radius:14px;padding:18px 20px;cursor:pointer;display:flex;align-items:center;gap:16px;transition:transform .12s,box-shadow .12s;border:2px solid transparent;}
+.mode-card:active{transform:scale(.97);}
+.mode-card.goal{background:linear-gradient(135deg,#0d2240,#0a1a32);border-color:var(--blue);box-shadow:0 0 20px rgba(30,107,196,.2);}
+.mode-card.floor{background:linear-gradient(135deg,#0d2010,#0a1a08);border-color:#3a7a1a;box-shadow:0 0 20px rgba(58,122,26,.2);}
+.mode-card .mc-icon{font-size:2.4rem;flex-shrink:0;}
+.mc-txt h3{font-family:Impact,sans-serif;font-size:1.1rem;letter-spacing:2px;margin-bottom:3px;}
+.mode-card.goal .mc-txt h3{color:var(--acc);}
+.mode-card.floor .mc-txt h3{color:var(--floorAcc);}
+.mc-txt p{font-size:.72rem;color:#889;line-height:1.4;}
+.launcher-ver{font-size:.6rem;color:#334;margin-top:24px;letter-spacing:1px;}
+
+/* ══════════════════════════════
+   SHARED HEADER
+══════════════════════════════ */
+#hdr{background:linear-gradient(90deg,var(--rink),var(--mid),var(--rink));border-bottom:2px solid var(--blue);padding:8px 12px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;z-index:30;}
+#hdr.floor-mode{border-bottom-color:#3a7a1a;background:linear-gradient(90deg,#0d2010,#0d2818,#0d2010);}
+#hdr h1{font-family:Impact,sans-serif;font-size:1.1rem;letter-spacing:2px;color:var(--acc);text-shadow:0 0 10px rgba(0,212,255,.6);}
+#hdr.floor-mode h1{color:var(--floorAcc);text-shadow:0 0 10px rgba(127,255,58,.4);}
+#scoreboard{display:flex;gap:10px;}
+.sc{text-align:center;}
+.sc-n{font-family:Impact,sans-serif;font-size:1.35rem;color:var(--hit);line-height:1;}
+.sc-l{font-size:.5rem;text-transform:uppercase;letter-spacing:1px;color:#aaa;}
+
+/* ══════════════════════════════
+   CAMERA AREA (shared)
+══════════════════════════════ */
+#main{flex:1;position:relative;overflow:hidden;touch-action:none;display:none;}
+video{position:absolute;width:100%;height:100%;object-fit:cover;top:0;left:0;transform-origin:center center;}
+#ov{position:absolute;width:100%;height:100%;top:0;left:0;pointer-events:none;}
+#ti{position:absolute;width:100%;height:100%;top:0;left:0;pointer-events:none;}
+#proc{display:none;}
+#zoom-ind{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:28;font-family:Impact,sans-serif;font-size:1.8rem;color:rgba(0,212,255,.9);text-shadow:0 0 20px rgba(0,212,255,.7);pointer-events:none;opacity:0;transition:opacity .3s;background:rgba(10,22,40,.6);border-radius:10px;padding:6px 18px;}
+#zoom-ind.show{opacity:1;}
+#hud{position:absolute;top:8px;left:8px;right:8px;display:none;justify-content:space-between;align-items:flex-start;z-index:25;pointer-events:none;}
+#hud-l{display:flex;flex-direction:column;gap:5px;pointer-events:all;}
+#hud-r{display:flex;flex-direction:column;gap:5px;align-items:flex-end;pointer-events:all;}
+.hpill{background:rgba(10,22,40,.82);border:1px solid rgba(30,107,196,.65);border-radius:20px;padding:4px 11px;font-size:.68rem;color:var(--acc);backdrop-filter:blur(4px);}
+.floor-mode .hpill{border-color:rgba(58,122,26,.65);color:var(--floorAcc);}
+.hbtn{background:rgba(10,22,40,.82);border:1px solid rgba(30,107,196,.55);border-radius:8px;padding:7px 11px;font-family:Impact,sans-serif;font-size:.78rem;color:#fff;cursor:pointer;backdrop-filter:blur(4px);}
+.hbtn:active{transform:scale(.93);}
+#zoom-hint{position:absolute;bottom:65px;left:50%;transform:translateX(-50%);z-index:25;background:rgba(10,22,40,.75);border:1px solid rgba(30,107,196,.4);border-radius:20px;padding:4px 14px;font-size:.68rem;color:#aaa;backdrop-filter:blur(3px);pointer-events:none;white-space:nowrap;}
+#seqbar{position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:26;display:flex;gap:6px;pointer-events:none;}
+.sdot{width:11px;height:11px;border-radius:50%;background:rgba(255,255,255,.2);border:2px solid rgba(255,255,255,.35);}
+.sdot.done{background:var(--hit);border-color:var(--hit);}
+.sdot.cur{background:var(--acc);border-color:var(--acc);box-shadow:0 0 8px var(--acc);}
+#fab{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);z-index:25;display:flex;gap:7px;background:rgba(10,22,40,.82);border:1px solid rgba(30,107,196,.6);border-radius:30px;padding:8px 14px;backdrop-filter:blur(4px);}
+.fb{border:none;border-radius:20px;padding:8px 15px;font-family:Impact,sans-serif;font-size:.83rem;letter-spacing:1px;cursor:pointer;flex-shrink:0;}
+.fb:active{transform:scale(.93);}
+.fba{background:var(--acc);color:var(--rink);}
+.fbp{background:var(--blue);color:#fff;}
+.fbw{background:var(--warn);color:#fff;}
+.fbg{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.2);}
+.fbfl{background:var(--floorAcc);color:#0a1a08;}
+#sbar{position:absolute;bottom:58px;left:50%;transform:translateX(-50%);background:rgba(10,22,40,.85);border:1px solid rgba(255,255,255,.14);border-radius:20px;padding:4px 14px;font-size:.68rem;color:#ccc;z-index:24;white-space:nowrap;max-width:94%;text-align:center;}
+#hfl{position:absolute;inset:0;pointer-events:none;z-index:20;opacity:0;background:rgba(0,255,136,.2);}
+#hbdg{position:absolute;top:42%;left:50%;transform:translate(-50%,-50%) scale(.3);z-index:21;font-family:Impact,sans-serif;font-size:2.8rem;letter-spacing:4px;color:var(--hit);text-shadow:0 0 30px rgba(0,255,136,.9);text-align:center;pointer-events:none;white-space:pre;opacity:0;transition:transform .22s cubic-bezier(.2,1.6,.4,1),opacity .15s;}
+#hbdg.show{opacity:1;transform:translate(-50%,-50%) scale(1);}
+#scl{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--acc),transparent);z-index:18;animation:scan 1.1s linear infinite;opacity:0;transition:opacity .3s;}
+#scl.on{opacity:1;}
+@keyframes scan{0%{top:0}100%{top:100%}}
+#pdbg{position:absolute;top:48px;left:8px;z-index:26;font-size:.62rem;color:rgba(0,212,255,.8);pointer-events:none;display:none;background:rgba(0,0,0,.55);padding:3px 8px;border-radius:4px;}
+
+/* ══════════════════════════════
+   FLOOR MODE: CORNER SETUP
+══════════════════════════════ */
+#corner-dots canvas{display:none;}
+.corner-dot{position:absolute;width:28px;height:28px;border-radius:50%;background:rgba(127,255,58,.85);border:3px solid #fff;transform:translate(-50%,-50%);z-index:30;cursor:grab;box-shadow:0 0 12px rgba(127,255,58,.6);display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:bold;color:#0a1a08;}
+.corner-dot.placed{background:rgba(127,255,58,1);}
+#floor-grid-canvas{position:absolute;width:100%;height:100%;top:0;left:0;pointer-events:none;z-index:15;}
+
+/* Floor HUD timer */
+#floor-timer-bar{position:absolute;top:0;left:0;right:0;height:5px;background:rgba(255,255,255,.1);z-index:27;pointer-events:none;}
+#floor-timer-fill{height:100%;background:var(--floorAcc);width:100%;transition:width .1s linear;box-shadow:0 0 8px rgba(127,255,58,.6);}
+#floor-countdown{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:28;font-family:Impact,sans-serif;font-size:4rem;color:rgba(127,255,58,.8);text-shadow:0 0 30px rgba(127,255,58,.5);pointer-events:none;opacity:0;transition:opacity .3s;}
+#floor-countdown.show{opacity:1;}
+
+/* ══════════════════════════════
+   MODALS — Goal mode (full overlay)
+══════════════════════════════ */
+.modal{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:40;background:rgba(5,14,28,.9);backdrop-filter:blur(6px);}
+.modal.hidden{display:none!important;}
+.card{background:var(--mid);border:1px solid var(--blue);border-radius:10px;padding:20px;max-width:340px;width:92%;text-align:center;max-height:90dvh;overflow-y:auto;}
+
+/* ══════════════════════════════
+   FLOOR HUD PANELS — camera stays visible
+   Panels slide in from bottom, no dark overlay
+══════════════════════════════ */
+.floor-panel{position:absolute;left:8px;right:8px;bottom:58px;z-index:40;display:flex;justify-content:center;pointer-events:none;}
+.floor-panel.hidden{display:none!important;}
+.floor-panel > .floor-card{pointer-events:all;width:100%;max-width:420px;}
+.floor-card{background:rgba(13,40,16,.93);border:1px solid #3a7a1a;border-radius:10px;padding:14px 16px;text-align:center;max-height:60dvh;overflow-y:auto;backdrop-filter:blur(8px);}
+.card h2{font-family:Impact,sans-serif;font-size:1.15rem;letter-spacing:2px;color:var(--acc);margin-bottom:9px;}
+.floor-card h2{color:var(--floorAcc);}
+.card p{font-size:.8rem;color:#ccc;line-height:1.5;margin-bottom:12px;}
+.brow{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:9px;}
+.btn{border:none;border-radius:6px;padding:9px 17px;font-family:Impact,sans-serif;font-size:.85rem;letter-spacing:1px;cursor:pointer;}
+.btn:active{transform:scale(.94);}
+.bta{background:var(--acc);color:var(--rink);}
+.btp{background:var(--blue);color:#fff;}
+.btw{background:var(--warn);color:#fff;}
+.btg{background:transparent;color:#aaa;border:1px solid #444;}
+.btfl{background:var(--floorAcc);color:#0a1a08;}
+.errb{background:rgba(196,30,30,.15);border:1px solid var(--red);border-radius:6px;padding:10px;margin-bottom:11px;font-size:.77rem;color:#ffaaaa;line-height:1.6;white-space:pre-line;text-align:left;}
+#tgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0;}
+.thb{border-radius:6px;border:3px solid #444;overflow:hidden;aspect-ratio:1;position:relative;background:#111;cursor:pointer;transition:border-color .15s,opacity .15s;}
+.thb.active{border-color:var(--hit);}
+.thb.inactive{border-color:#444;opacity:.45;}
+.thb img{width:100%;height:100%;object-fit:cover;display:block;}
+.thb-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35);}
+.thb-id{font-family:Impact,sans-serif;font-size:1.1rem;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.9);}
+.thb-check{position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;background:var(--hit);display:flex;align-items:center;justify-content:center;font-size:.75rem;color:#000;font-weight:bold;}
+.thb.inactive .thb-check{background:#666;}
+.sel-hint{font-size:.72rem;color:#aaa;margin-bottom:4px;}
+.slrow{display:flex;align-items:center;gap:7px;margin:6px 0;font-size:.73rem;color:#aaa;}
+.slrow input[type=range]{flex:1;accent-color:var(--acc);}
+.floor-card .slrow input[type=range]{accent-color:var(--floorAcc);}
+.togrow{display:flex;align-items:center;justify-content:space-between;margin:7px 0;font-size:.8rem;color:#ccc;}
+.tog{width:38px;height:20px;border-radius:10px;background:#333;position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;}
+.tog.on{background:var(--acc);}
+.tog::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;background:#fff;border-radius:50%;transition:left .2s;}
+.tog.on::after{left:20px;}
+#trgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin:10px 0;}
+.trc{border:2px solid #333;border-radius:8px;padding:11px 7px;cursor:pointer;transition:border-color .2s,background .2s;text-align:center;}
+.trc.sel,.trc:hover{border-color:var(--acc);background:rgba(0,212,255,.08);}
+.trc .icon{font-size:1.7rem;margin-bottom:3px;}
+.trc .lbl{font-size:.7rem;color:#ccc;}
+
+/* Floor mode training grid */
+#fl-trgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin:10px 0;}
+.fl-trc{border:2px solid #2a4a1a;border-radius:8px;padding:11px 7px;cursor:pointer;transition:border-color .2s,background .2s;text-align:center;}
+.fl-trc.sel,.fl-trc:hover{border-color:var(--floorAcc);background:rgba(127,255,58,.06);}
+.fl-trc .icon{font-size:1.7rem;margin-bottom:3px;}
+.fl-trc .lbl{font-size:.7rem;color:#aaa;}
+
+/* Floor grid selector */
+.grid-size-picker{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:10px 0;}
+.gsp{border:2px solid #2a4a1a;border-radius:6px;padding:8px 4px;cursor:pointer;text-align:center;font-size:.72rem;color:#aaa;transition:border-color .15s,background .15s;}
+.gsp.sel{border-color:var(--floorAcc);background:rgba(127,255,58,.08);color:var(--floorAcc);}
+
+/* Camera selector */
+.cam-list{display:flex;flex-direction:column;gap:6px;margin:8px 0;}
+.cam-opt{border:2px solid #2a4040;border-radius:7px;padding:9px 12px;cursor:pointer;text-align:left;font-size:.75rem;color:#ccc;transition:border-color .15s,background .15s;display:flex;align-items:center;gap:8px;}
+.cam-opt:hover,.cam-opt.sel{border-color:var(--floorAcc);background:rgba(127,255,58,.06);color:#fff;}
+.cam-opt .cam-icon{font-size:1.1rem;}
+
+/* ══════════════════════════════
+   CALIBRATION UI
+══════════════════════════════ */
+.calib-preview{width:100%;max-height:120px;object-fit:contain;border-radius:6px;border:2px solid rgba(0,212,255,.3);margin:8px 0;background:#000;}
+.calib-step{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.04);border-radius:8px;padding:9px 12px;margin:5px 0;border:1px solid rgba(255,255,255,.1);}
+.calib-step .cs-icon{font-size:1.5rem;flex-shrink:0;}
+.calib-step .cs-txt{font-size:.75rem;color:#bbb;flex:1;line-height:1.4;}
+.calib-step.done .cs-icon::after{content:' ✓';}
+.calib-step.done{border-color:var(--hit);background:rgba(0,255,136,.06);}
+.calib-step.active{border-color:var(--acc);background:rgba(0,212,255,.06);}
+.calib-step.floor-active{border-color:var(--floorAcc);background:rgba(127,255,58,.06);}
+.calib-progress{display:flex;gap:4px;justify-content:center;margin:6px 0;}
+.calib-dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);transition:all .2s;}
+.calib-dot.done{background:var(--hit);border-color:var(--hit);}
+.calib-dot.active{background:var(--acc);border-color:var(--acc);box-shadow:0 0 6px var(--acc);}
+.calib-dot.floor-active{background:var(--floorAcc);border-color:var(--floorAcc);box-shadow:0 0 6px var(--floorAcc);}
+.calib-profile{font-size:.67rem;color:#667;font-family:monospace;background:rgba(0,0,0,.4);border-radius:4px;padding:4px 8px;margin:4px 0;text-align:left;line-height:1.6;}
+.calib-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.63rem;font-weight:bold;letter-spacing:1px;}
+.calib-badge.ok{background:rgba(0,255,136,.2);color:var(--hit);border:1px solid var(--hit);}
+.calib-badge.warn{background:rgba(255,107,53,.2);color:var(--warn);border:1px solid var(--warn);}
+.calib-badge.none{background:rgba(255,255,255,.1);color:#888;border:1px solid #555;}
+</style>
+</head>
+<body>
+
+<!-- ══════════ LAUNCHER ══════════ -->
+<div id="launcher">
+  <h1>🏒 HOCKEY TRAINER</h1>
+  <p class="sub">Wähle deinen Trainings-Modus</p>
+  <div class="mode-cards">
+    <div class="mode-card goal" id="btn-mode-goal">
+      <div class="mc-icon">🥅</div>
+      <div class="mc-txt">
+        <h3>TORSCHUSS</h3>
+        <p>Kamera auf das Tor richten · weiße Targets automatisch erkennen · Schüsse tracken</p>
+      </div>
+    </div>
+    <div class="mode-card floor" id="btn-mode-floor">
+      <div class="mc-icon">🏒</div>
+      <div class="mc-txt">
+        <h3>FLOORTRAINER</h3>
+        <p>Kamera auf Boden oder Brett · Grid einzeichnen · Puck in Zielfeld steuern</p>
+      </div>
+    </div>
+  </div>
+  <div class="launcher-ver">v5.0 · Hockey Target Trainer</div>
+</div>
+
+<!-- ══════════ MAIN APP ══════════ -->
+<div id="hdr" style="display:none">
+  <h1 id="hdr-title">🏒 TARGET TRAINER</h1>
+  <div id="scoreboard">
+    <div class="sc"><div class="sc-n" id="sH">0</div><div class="sc-l">Treffer</div></div>
+    <div class="sc"><div class="sc-n" id="sS">0</div><div class="sc-l">Schüsse</div></div>
+    <div class="sc"><div class="sc-n" id="sP">–</div><div class="sc-l">Quote</div></div>
+    <div class="sc"><div class="sc-n" id="sT">–</div><div class="sc-l">Zeit</div></div>
+  </div>
+</div>
+
+<div id="main">
+  <video id="video" autoplay playsinline muted></video>
+  <canvas id="ov"></canvas>
+  <canvas id="ti"></canvas>
+  <canvas id="proc"></canvas>
+  <canvas id="floor-grid-canvas"></canvas>
+  <div id="scl"></div>
+  <div id="hfl"></div>
+  <div id="hbdg"></div>
+  <div id="pdbg"></div>
+  <div id="seqbar"></div>
+  <div id="zoom-ind"></div>
+  <div id="zoom-hint" style="display:none">🤏 Zwei Finger zum Zoomen</div>
+  <div id="floor-timer-bar" style="display:none"><div id="floor-timer-fill"></div></div>
+  <div id="floor-countdown"></div>
+
+  <!-- Floating HUD -->
+  <div id="hud">
+    <div id="hud-l">
+      <div class="hpill" id="pill-t">Targets: –</div>
+      <div class="hpill" id="pill-m">Frei</div>
+      <div class="hpill" id="pill-z">Zoom: 1.0×</div>
+    </div>
+    <div id="hud-r">
+      <button class="hbtn" id="hbtn-tr">🎯 Training</button>
+      <button class="hbtn" id="hbtn-st">⚙ Settings</button>
+      <button class="hbtn" id="hbtn-cl">📸 Kalibrieren</button>
+      <button class="hbtn" id="hbtn-rs">↺ Reset</button>
+    </div>
+  </div>
+
+  <div id="sbar">Wird geladen…</div>
+
+  <!-- FAB -->
+  <div id="fab">
+    <button class="fb fba" id="fb-scan" style="display:none">🔍 Scannen</button>
+    <button class="fb fbp" id="fb-cam">📷 Kamera</button>
+    <button class="fb fbg" id="fb-gear">⚙</button>
+    <!-- Floor mode buttons (hidden by default) -->
+    <button class="fb fbfl" id="fb-floor-corners" style="display:none">📐 Ecken setzen</button>
+    <button class="fb fbfl" id="fb-floor-calib" style="display:none">📸 Kalibrieren</button>
+    <button class="fb fbfl" id="fb-floor-start" style="display:none">▶ Training</button>
+    <button class="fb fbg" id="fb-floor-back" style="display:none">← Zurück</button>
+  </div>
+
+  <!-- ════ GOAL MODE MODALS ════ -->
+  <div class="modal" id="m-welcome">
+    <div class="card">
+      <h2>🏒 HOCKEY TARGETS</h2>
+      <div class="errb hidden" id="cam-err"></div>
+      <p>Richte das Handy auf das Tor.<br><br>
+      <b>Zoomen:</b> Zwei Finger auf dem Kamerabild spreizen/zusammenführen.<br><br>
+      Targets werden automatisch erkannt und können einzeln ab/angewählt werden.</p>
+      <div class="brow"><button class="btn bta" id="btn-cam">📷 Kamera starten</button></div>
+      <div class="brow hidden" id="retry-row">
+        <button class="btn btg" id="btn-retry">↺ Nochmal</button>
+        <button class="btn btp" onclick="location.reload()">🔄 Neu laden</button>
+      </div>
+      <div class="brow" style="margin-top:8px"><button class="btn btg" id="btn-back-launch-goal" style="font-size:.72rem;padding:6px 12px">← Startmenü</button></div>
+    </div>
+  </div>
+
+  <div class="modal hidden" id="m-confirm">
+    <div class="card">
+      <h2>TARGETS AUSWÄHLEN</h2>
+      <p id="ctxt"></p>
+      <p class="sel-hint">Tippe auf ein Target um es an- oder abzuwählen</p>
+      <div id="tgrid"></div>
+      <div class="slrow">
+        <span>Weiss-Schwelle</span>
+        <input type="range" id="slW" min="130" max="245" value="185">
+        <span id="slWv">185</span>
+      </div>
+      <div class="brow">
+        <button class="btn bta" id="btn-ok">✓ START</button>
+        <button class="btn btw" id="btn-rescan">↺ Neu scannen</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal hidden" id="m-settings">
+    <div class="card" style="max-width:360px;">
+      <h2>⚙ EINSTELLUNGEN</h2>
+      <div class="togrow"><span>Puck-Erkennung</span><div class="tog on" id="tog-puck"></div></div>
+      <div class="togrow"><span>Treffer-Sound</span><div class="tog on" id="tog-sound"></div></div>
+      <div class="togrow"><span>Puck-Debug</span><div class="tog" id="tog-debug"></div></div>
+      <div class="slrow"><span style="min-width:115px">Bewegungs-Schwelle</span><input type="range" id="slPT" min="1" max="20" value="6"><span id="slPTv">6</span></div>
+      <div class="slrow"><span style="min-width:115px">Weiss-Schwelle</span><input type="range" id="slW2" min="130" max="245" value="185"><span id="slW2v">185</span></div>
+      <div class="slrow"><span style="min-width:115px">Puck-Mindestgröße</span><input type="range" id="slPM" min="3" max="30" value="8"><span id="slPMv">8</span></div>
+      <div class="slrow"><span style="min-width:115px">Puck-Dunkel-Max</span><input type="range" id="slPD" min="30" max="150" value="90"><span id="slPDv">90</span></div>
+      <p style="font-size:.7rem;color:#777;margin-top:8px;text-align:left">
+        💡 Treffer nur wenn schwarzer Puck <b>vor</b> dem Target erkennbar ist. Netz-Wackeln = kein Treffer.</p>
+      <div class="brow" style="margin-top:12px;"><button class="btn bta" id="btn-sc">SCHLIESSEN</button></div>
+    </div>
+  </div>
+
+  <div class="modal hidden" id="m-training">
+    <div class="card" style="max-width:360px;">
+      <h2>🎯 TRAININGS-MODUS</h2>
+      <div id="trgrid">
+        <div class="trc sel" data-m="free"><div class="icon">🏒</div><div class="lbl">Frei<br><span style="color:#777;font-size:.63rem">Kein Vorgabe</span></div></div>
+        <div class="trc" data-m="random"><div class="icon">🎲</div><div class="lbl">Zufällig<br><span style="color:#777;font-size:.63rem">Target blinkt auf</span></div></div>
+        <div class="trc" data-m="sequence"><div class="icon">📋</div><div class="lbl">Sequenz<br><span style="color:#777;font-size:.63rem">Feste Reihenfolge</span></div></div>
+        <div class="trc" data-m="speed"><div class="icon">⚡</div><div class="lbl">Speed<br><span style="color:#777;font-size:.63rem">Countdown-Timer</span></div></div>
+      </div>
+      <div id="seq-ed" style="display:none">
+        <p style="font-size:.72rem;color:#aaa;margin-bottom:7px">Reihenfolge antippen:</p>
+        <div id="seq-btns" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;"></div>
+        <div id="seq-prev" style="font-size:.72rem;color:var(--acc);margin-top:6px;min-height:18px;"></div>
+      </div>
+      <div id="spd-ed" style="display:none">
+        <div class="slrow"><span>Zeit pro Target (s)</span><input type="range" id="slSP" min="2" max="15" value="5"><span id="slSPv">5</span></div>
+      </div>
+      <div class="togrow" style="margin-top:8px"><span>Pfeil zum Ziel</span><div class="tog on" id="tog-arrow"></div></div>
+      <div class="togrow"><span>Ziel aufleuchten</span><div class="tog on" id="tog-glow"></div></div>
+      <div class="brow" style="margin-top:12px">
+        <button class="btn bta" id="btn-trs">▶ Starten</button>
+        <button class="btn btg" id="btn-trc">Abbrechen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ GOAL MODE: CALIBRATION ════ -->
+  <div class="modal hidden" id="m-calib-goal">
+    <div class="card" style="max-width:360px;">
+      <h2>🎯 PUCK KALIBRIEREN</h2>
+      <p style="font-size:.78rem;color:#ccc;margin-bottom:10px">Halte den <b>Puck</b> kurz ins Kamerabild.<br>Die App fotografiert ihn automatisch.</p>
+      <canvas id="calib-goal-canvas" class="calib-preview" width="320" height="120"></canvas>
+      <div class="calib-progress" id="calib-goal-dots"></div>
+      <div id="calib-goal-status" style="font-size:.75rem;color:#aaa;margin:6px 0;min-height:18px">Warte auf Puck…</div>
+      <div id="calib-goal-profile" class="calib-profile" style="display:none"></div>
+      <div class="brow" style="margin-top:10px">
+        <button class="btn bta" id="btn-calib-goal-ok" style="display:none">✓ Übernehmen</button>
+        <button class="btn btw" id="btn-calib-goal-retry">↺ Nochmal</button>
+        <button class="btn btg" id="btn-calib-goal-skip">Überspringen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ FLOOR MODE MODALS ════ -->
+
+  <!-- Floor: Camera select -->
+  <div class="floor-panel hidden" id="m-floor-cam">
+    <div class="floor-card">
+      <h2 style="font-family:Impact,sans-serif;font-size:1rem;letter-spacing:2px;color:var(--floorAcc);margin-bottom:8px">📷 KAMERA WÄHLEN</h2>
+      <p style="font-size:.75rem;color:#aaa;margin-bottom:8px">Externe USB-C Kamera oder Handy-Kamera auswählen:</p>
+      <div class="cam-list" id="cam-list"></div>
+      <div class="errb hidden" id="fl-cam-err"></div>
+      <div class="brow" style="margin-top:8px">
+        <button class="btn btg" id="btn-fl-cam-refresh">↺ Aktualisieren</button>
+        <button class="btn btg" id="btn-back-launch-floor" style="font-size:.72rem;padding:6px 12px">← Startmenü</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floor: Grid setup -->
+  <div class="floor-panel hidden" id="m-floor-setup">
+    <div class="floor-card">
+      <h2 style="font-family:Impact,sans-serif;font-size:1rem;letter-spacing:2px;color:var(--floorAcc);margin-bottom:8px">⚙ SPIELFELD EINRICHTEN</h2>
+      <p style="font-size:.75rem;color:#aaa;margin-bottom:8px">Wie viele Felder soll das Grid haben?</p>
+      <div class="grid-size-picker" id="grid-size-picker">
+        <div class="gsp" data-c="3" data-r="3">3×3</div>
+        <div class="gsp sel" data-c="4" data-r="4">4×4</div>
+        <div class="gsp" data-c="5" data-r="5">5×5</div>
+        <div class="gsp" data-c="6" data-r="6">6×6</div>
+        <div class="gsp" data-c="8" data-r="8">8×8</div>
+        <div class="gsp" data-c="10" data-r="10">10×10</div>
+        <div class="gsp" data-c="12" data-r="12">12×12</div>
+        <div class="gsp" data-c="16" data-r="16">16×16</div>
+      </div>
+      <p style="font-size:.75rem;color:#aaa;margin:10px 0 4px">Puck-/Ball-Erkennung:</p>
+      <div class="togrow"><span style="font-size:.78rem">Farberkennung (bunter Ball)</span><div class="tog on" id="fl-tog-color"></div></div>
+      <div class="slrow"><span style="min-width:90px;font-size:.72rem">Bewegungs-Schwelle</span><input type="range" id="fl-slPT" min="1" max="20" value="5"><span id="fl-slPTv">5</span></div>
+      <div class="slrow"><span style="min-width:90px;font-size:.72rem">Puck-Mindestgröße</span><input type="range" id="fl-slPM" min="3" max="40" value="10"><span id="fl-slPMv">10</span></div>
+      <div class="slrow"><span style="min-width:90px;font-size:.72rem">Farb-Sättigung Min</span><input type="range" id="fl-slSat" min="0" max="100" value="35"><span id="fl-slSatv">35</span></div>
+      <div class="brow" style="margin-top:12px">
+        <button class="btn btfl" id="btn-fl-setup-ok">📐 Ecken einzeichnen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floor: Corner instructions — pointer-events:none während Antippen, all nach Bestätigung -->
+  <div class="floor-panel hidden" id="m-floor-corners" style="bottom:auto;top:8px;left:8px;right:8px;justify-content:center;pointer-events:none;">
+    <div id="corner-panel-inner" class="floor-card" style="padding:10px 16px;max-width:320px;text-align:left;pointer-events:none;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:1.4rem">📐</span>
+        <div>
+          <div style="font-family:Impact,sans-serif;font-size:.85rem;letter-spacing:1px;color:var(--floorAcc);margin-bottom:2px">ECKEN MARKIEREN</div>
+          <p id="corner-instr" style="font-size:.75rem;color:#bbb;margin:0">Tippe auf die <b>obere linke Ecke</b> des Spielfelds</p>
+        </div>
+      </div>
+      <div class="brow" id="corner-confirm-btns" style="display:none;margin-top:10px;">
+        <button class="btn btfl" id="btn-corner-ok">✓ Passt so!</button>
+        <button class="btn btg" id="btn-corner-retry">↺ Nochmal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floor: Grid cell toggle -->
+  <div class="floor-panel hidden" id="m-floor-cells">
+    <div class="floor-card">
+      <h2 style="font-family:Impact,sans-serif;font-size:1rem;letter-spacing:2px;color:var(--floorAcc);margin-bottom:6px">🔲 FELDER AN/ABWÄHLEN</h2>
+      <p style="font-size:.72rem;color:#aaa;margin-bottom:6px">Tippe auf Felder um sie zu deaktivieren</p>
+      <div id="floor-cell-grid" style="margin:8px 0;overflow:auto;max-height:30dvh;display:flex;justify-content:center;"></div>
+      <div class="brow">
+        <button class="btn btfl" id="btn-fl-cells-ok">✓ Weiter</button>
+        <button class="btn btg" id="btn-fl-cells-reset">Alle aktiv</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floor: Calibration (puck + stick) — HUD-Strip, kein blockierendes Modal -->
+  <div class="floor-panel hidden" id="m-floor-calib" style="bottom:auto;top:0;left:0;right:0;padding:0;background:none;justify-content:flex-start;">
+    <!-- Beschreibungs-Phase: kein Kamerabild-Block -->
+    <div id="fl-calib-desc" class="floor-card" style="margin:8px;max-width:420px;border:2px solid var(--floorAcc);">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+        <span id="fl-calib-desc-icon" style="font-size:1.8rem">🏒</span>
+        <div>
+          <div id="fl-calib-desc-title" style="font-family:Impact,sans-serif;font-size:.9rem;letter-spacing:1px;color:var(--floorAcc)">SCHRITT 1: PUCK / BALL</div>
+          <p id="fl-calib-desc-text" style="font-size:.75rem;color:#ccc;margin:2px 0 0">Lege den Puck oder Ball gut sichtbar ins Kamerabild.<br>Dann <b>📸 Aufnehmen</b> drücken.</p>
+        </div>
+      </div>
+      <div class="calib-progress" id="calib-floor-dots"></div>
+      <div class="brow" style="margin-top:6px">
+        <button class="btn btfl" id="btn-fl-calib-capture">📸 Aufnehmen</button>
+        <button class="btn btg" id="btn-fl-calib-retry">↺ Reset</button>
+        <button class="btn btfl" id="btn-fl-calib-ok" style="display:none">✓ Fertig → Training</button>
+        <button class="btn btg" id="btn-fl-calib-skip">Überspringen</button>
+      </div>
+    </div>
+    <!-- Vorschau-Strip: zeigt letztes Foto mit Rahmen (schmal, unten) -->
+    <div id="fl-calib-preview-strip" style="display:none;position:fixed;bottom:0;left:0;right:0;background:rgba(0,0,0,.82);padding:6px 10px;display:none;align-items:center;gap:10px;">
+      <canvas id="calib-floor-canvas" width="160" height="90" style="border-radius:5px;border:2px solid var(--floorAcc);flex-shrink:0;"></canvas>
+      <div>
+        <div id="calib-floor-status" style="font-size:.75rem;color:#aaa;line-height:1.4"></div>
+        <div id="calib-floor-profile" class="calib-profile" style="display:none;margin-top:2px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floor: Training mode -->
+  <div class="floor-panel hidden" id="m-floor-training">
+    <div class="floor-card" style="max-width:420px;">
+      <h2 style="font-family:Impact,sans-serif;font-size:1rem;letter-spacing:2px;color:var(--floorAcc);margin-bottom:8px">🏒 TRAINING WÄHLEN</h2>
+      <div id="fl-trgrid">
+        <div class="fl-trc sel" data-fm="random60"><div class="icon">🎲</div><div class="lbl">Zufällig 60s<br><span style="color:#556;font-size:.63rem">So viele Treffer wie möglich</span></div></div>
+        <div class="fl-trc" data-fm="shuttle"><div class="icon">↔</div><div class="lbl">Pendel<br><span style="color:#556;font-size:.63rem">2 Felder · alle 15s neue Richtung</span></div></div>
+      </div>
+      <div class="slrow" style="margin-top:8px"><span style="min-width:80px;font-size:.75rem">Spielzeit (s)</span><input type="range" id="fl-slTime" min="30" max="180" step="10" value="60"><span id="fl-slTimev">60</span></div>
+      <div class="slrow"><span style="min-width:80px;font-size:.75rem">Pendel-Intervall (s)</span><input type="range" id="fl-slShuttle" min="5" max="30" step="5" value="15"><span id="fl-slShuttlev">15</span></div>
+      <div class="brow" style="margin-top:12px">
+        <button class="btn btfl" id="btn-fl-tr-start">▶ Starten</button>
+        <button class="btn btg" id="btn-fl-tr-cancel">Abbrechen</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<script>
+'use strict';
+
+// ═══════════════════════════════════════════════════════
+//  APP MODE
+// ═══════════════════════════════════════════════════════
+let APP_MODE = null; // 'goal' | 'floor'
+
+const launcher = document.getElementById('launcher');
+const hdr      = document.getElementById('hdr');
+const mainDiv  = document.getElementById('main');
+
+document.getElementById('btn-mode-goal').onclick  = () => startAppMode('goal');
+document.getElementById('btn-mode-floor').onclick = () => startAppMode('floor');
+
+function startAppMode(mode){
+  APP_MODE = mode;
+  launcher.style.display = 'none';
+  hdr.style.display = 'flex';
+  mainDiv.style.display = 'block';
+  if(mode === 'goal'){
+    hdr.classList.remove('floor-mode');
+    document.getElementById('hdr-title').textContent = '🏒 TARGET TRAINER';
+    showModal('m-welcome');
+    setSt('Kamera starten um zu beginnen');
+  } else {
+    hdr.classList.add('floor-mode');
+    document.getElementById('hdr-title').textContent = '🏒 FLOORTRAINER';
+    document.getElementById('sH').textContent='0';
+    document.getElementById('sS').textContent='0';
+    document.getElementById('sP').textContent='–';
+    document.getElementById('sT').textContent='–';
+    setFABFloor('cam');
+    showModal('m-floor-cam');
+    loadCameraList();
+    setSt('Kamera wählen');
+  }
+}
+
+document.getElementById('btn-back-launch-goal').onclick = backToLauncher;
+document.getElementById('btn-back-launch-floor').onclick = backToLauncher;
+
+function backToLauncher(){
+  stopAllStreams();
+  FLOOR.tracking = false;
+  if(FLOOR.animId) cancelAnimationFrame(FLOOR.animId);
+  clearInterval(FLOOR.gameTimer);
+  FLOOR.corners = [];
+  FLOOR.cells = [];
+  hideAll();
+  hdr.style.display = 'none';
+  mainDiv.style.display = 'none';
+  launcher.style.display = 'flex';
+  APP_MODE = null;
+}
+
+function stopAllStreams(){
+  if(video.srcObject){ video.srcObject.getTracks().forEach(t=>t.stop()); video.srcObject=null; }
+}
+
+// ═══════════════════════════════════════════════════════
+//  CALIBRATION STATE
+// ═══════════════════════════════════════════════════════
+const CALIB_DEFAULTS = {
+  puck: null,   // {minBr, maxBr, avgBr, minSz, maxSz, avgCompact, avgAspect, samples}
+  sticks: [],   // [{avgBr, aspect, compactness}] — mehrere Schläger-Samples
+  ready: false
+};
+
+const CALIB = {
+  goal: JSON.parse(localStorage.getItem('calib_goal') || 'null') || { puck: null, ready: false },
+  floor: JSON.parse(localStorage.getItem('calib_floor') || 'null') || { puck: null, sticks: [], ready: false },
+};
+
+function saveCalib(){
+  try{
+    localStorage.setItem('calib_goal',  JSON.stringify(CALIB.goal));
+    localStorage.setItem('calib_floor', JSON.stringify(CALIB.floor));
+  }catch(_){}
+}
+
+// ── Puck profile match (Goal mode) ──────────────────────
+// Returns true if blob matches the calibrated puck profile
+function matchesPuckProfile(blob, mode){
+  const prof = (mode==='goal') ? CALIB.goal.puck : CALIB.floor.puck;
+  if(!prof) return true; // no calibration → allow all
+  const TOL = 0.45; // 45% tolerance
+  const brOk = blob.avgD >= prof.minBr*(1-TOL) && blob.avgD <= prof.maxBr*(1+TOL);
+  const szOk = blob.n   >= prof.minSz*(1-TOL) && blob.n   <= prof.maxSz*(1+TOL);
+  return brOk && szOk;
+}
+
+// ── Stick profile match (Floor mode only) ───────────────
+// Returns true if blob looks like a hockey stick → reject
+function matchesStickProfile(blob){
+  if(!CALIB.floor.sticks.length) return false; // no calib → use old fixed filter
+  const aspect = Math.max(blob.w,blob.h) / (Math.min(blob.w,blob.h)||1);
+  // Compare against each recorded stick sample
+  for(const s of CALIB.floor.sticks){
+    const aspectMatch = aspect >= s.aspect*(1-0.4) && aspect <= s.aspect*(1+0.4);
+    const brMatch     = blob.avgBr !== undefined
+      ? blob.avgBr >= s.avgBr*(1-0.5) && blob.avgBr <= s.avgBr*(1+0.5)
+      : true;
+    if(aspectMatch && brMatch) return true; // looks like the stick
+  }
+  return false;
+}
+
+// ── Analyse a captured frame for a blob ─────────────────
+// Returns the best dark/colored moving blob found, or null
+function analyseCalibFrame(imgData, settings){
+  const {width:W, height:H, data:d} = imgData;
+  // scan for any interesting (dark or colorful) blob
+  const minSz = settings.minSz || 3;
+  const vis = new Uint8Array(W*H);
+  let best = null;
+  for(let y=2;y<H-2;y+=2)for(let x=2;x<W-2;x+=2){
+    const idx=y*W+x;
+    if(vis[idx]) continue;
+    const r=d[idx*4],g=d[idx*4+1],b2=d[idx*4+2];
+    const br=(r+g+b2)/3;
+    const maxC=Math.max(r,g,b2),minC=Math.min(r,g,b2);
+    const sat=maxC>0?(maxC-minC)/maxC*100:0;
+    // Accept dark objects OR colorful objects (not pure white)
+    const isCandidate = (br<100)||(sat>30&&br<230);
+    if(!isCandidate) continue;
+    const q=[idx];vis[idx]=1;
+    let x0=x,x1=x,y0=y,y1=y,n=0,totalBr=0,totalSat=0;
+    while(q.length){
+      const ci=q.pop(),cx=ci%W,cy=(ci/W)|0;
+      x0=Math.min(x0,cx);x1=Math.max(x1,cx);y0=Math.min(y0,cy);y1=Math.max(y1,cy);n++;
+      const cr=d[ci*4],cg=d[ci*4+1],cb=d[ci*4+2];
+      totalBr+=(cr+cg+cb)/3;
+      const cm=Math.max(cr,cg,cb),cmn=Math.min(cr,cg,cb);
+      totalSat+=cm>0?(cm-cmn)/cm*100:0;
+      for(const[a,b3]of[[-1,0],[1,0],[0,-1],[0,1]]){
+        const nx=cx+a,ny=cy+b3;
+        if(nx<0||nx>=W||ny<0||ny>=H)continue;
+        const ni=ny*W+nx;if(vis[ni])continue;
+        const nr=d[ni*4],ng=d[ni*4+1],nb=d[ni*4+2];
+        const nbr=(nr+ng+nb)/3,nmax=Math.max(nr,ng,nb),nmin=Math.min(nr,ng,nb);
+        const nsat=nmax>0?(nmax-nmin)/nmax*100:0;
+        if(nbr<100||(nsat>30&&nbr<230)){vis[ni]=1;q.push(ni);}
+      }
+    }
+    if(n<minSz) continue;
+    const bw=x1-x0,bh=y1-y0;
+    if(bw<2||bh<2||bw>W*0.8||bh>H*0.8) continue;
+    const avgBr=totalBr/n, avgSat=totalSat/n;
+    const aspect=Math.max(bw,bh)/(Math.min(bw,bh)||1);
+    const compact=n/(bw*bh||1);
+    const score=n+avgSat*2;
+    if(!best||score>best.score) best={cx:x0+bw/2,cy:y0+bh/2,x0,y0,bw,bh,n,avgBr,avgSat,aspect,compact,score};
+  }
+  return best;
+}
+
+// ═══════════════════════════════════════════════════════
+//  CALIBRATION — GOAL MODE
+// ═══════════════════════════════════════════════════════
+let calibGoalSamples=[], calibGoalAnimId=null, calibGoalCapturing=false;
+const CALIB_GOAL_TARGET=4; // frames to collect
+
+function startCalibGoal(afterCalib){
+  // afterCalib: callback when done or skipped
+  calibGoalSamples=[];calibGoalCapturing=true;
+  CALIB.goal._afterCalib=afterCalib;
+  document.getElementById('btn-calib-goal-ok').style.display='none';
+  document.getElementById('calib-goal-status').textContent='Halte den Puck ins Kamerabild…';
+  document.getElementById('calib-goal-profile').style.display='none';
+  updateCalibGoalDots();
+  showModal('m-calib-goal');
+  calibGoalLoop();
+}
+
+function updateCalibGoalDots(){
+  const el=document.getElementById('calib-goal-dots');
+  el.innerHTML='';
+  for(let i=0;i<CALIB_GOAL_TARGET;i++){
+    const d=document.createElement('div');
+    d.className='calib-dot'+(i<calibGoalSamples.length?' done':i===calibGoalSamples.length?' active':'');
+    el.appendChild(d);
+  }
+}
+
+function calibGoalLoop(){
+  if(!calibGoalCapturing) return;
+  calibGoalAnimId=requestAnimationFrame(calibGoalLoop);
+  const f=capFrame();if(!f)return;
+  // Draw preview
+  const cv=document.getElementById('calib-goal-canvas');
+  const ctx=cv.getContext('2d');
+  const scale=cv.width/f.width;
+  ctx.putImageData(f,0,0);
+  // Analyse
+  if(calibGoalSamples.length<CALIB_GOAL_TARGET){
+    const blob=analyseCalibFrame(f,{minSz:4});
+    if(blob&&blob.compact>0.2){
+      calibGoalSamples.push({avgBr:blob.avgBr,n:blob.n,aspect:blob.aspect,compact:blob.compact,bw:blob.bw,bh:blob.bh});
+      // Draw rect on preview
+      ctx.strokeStyle='#00ff88';ctx.lineWidth=2;ctx.strokeRect(blob.x0,blob.y0,blob.bw,blob.bh);
+      document.getElementById('calib-goal-status').textContent=`Aufnahme ${calibGoalSamples.length}/${CALIB_GOAL_TARGET}…`;
+      updateCalibGoalDots();
+    }
+  }
+  if(calibGoalSamples.length>=CALIB_GOAL_TARGET){
+    calibGoalCapturing=false;
+    cancelAnimationFrame(calibGoalAnimId);
+    finalizeCalibGoal();
+  }
+}
+
+function finalizeCalibGoal(){
+  if(!calibGoalSamples.length) return;
+  const brs=calibGoalSamples.map(s=>s.avgBr);
+  const szs=calibGoalSamples.map(s=>s.n);
+  CALIB.goal.puck={
+    minBr:Math.min(...brs)-10,
+    maxBr:Math.max(...brs)+10,
+    avgBr:brs.reduce((a,b)=>a+b,0)/brs.length,
+    minSz:Math.min(...szs)*0.5,
+    maxSz:Math.max(...szs)*2.5,
+    avgCompact:calibGoalSamples.reduce((a,s)=>a+s.compact,0)/calibGoalSamples.length,
+    samples:calibGoalSamples.length
+  };
+  CALIB.goal.ready=true;
+  saveCalib();
+  const p=CALIB.goal.puck;
+  document.getElementById('calib-goal-status').innerHTML='<span style="color:#00ff88">✓ Puck-Profil gespeichert!</span>';
+  document.getElementById('calib-goal-profile').style.display='block';
+  document.getElementById('calib-goal-profile').textContent=
+    `Helligkeit: ${Math.round(p.minBr)}–${Math.round(p.maxBr)}  Größe: ${Math.round(p.minSz)}–${Math.round(p.maxSz)}px  Kompaktheit: ${p.avgCompact.toFixed(2)}`;
+  document.getElementById('btn-calib-goal-ok').style.display='';
+}
+
+document.getElementById('btn-calib-goal-ok').onclick=()=>{
+  hideAll();
+  const cb=CALIB.goal._afterCalib;
+  if(cb) cb();
+};
+document.getElementById('btn-calib-goal-retry').onclick=()=>{
+  calibGoalSamples=[];calibGoalCapturing=true;
+  document.getElementById('btn-calib-goal-ok').style.display='none';
+  document.getElementById('calib-goal-profile').style.display='none';
+  document.getElementById('calib-goal-status').textContent='Halte den Puck ins Kamerabild…';
+  updateCalibGoalDots();
+  calibGoalLoop();
+};
+document.getElementById('btn-calib-goal-skip').onclick=()=>{
+  calibGoalCapturing=false;
+  cancelAnimationFrame(calibGoalAnimId);
+  hideAll();
+  const cb=CALIB.goal._afterCalib;
+  if(cb) cb();
+};
+
+// ═══════════════════════════════════════════════════════
+//  CALIBRATION — FLOOR MODE (Puck + Schläger)
+// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+//  CALIBRATION — FLOOR MODE (Puck + Schläger, sequenziell)
+// ═══════════════════════════════════════════════════════
+// Phasen: 'puck' → 'stick' → 'done'
+let flCalibPhase='puck', flCalibPuckSamples=[], flCalibStickSamples=[], flCalibAfter=null;
+const FL_CALIB_PUCK_TARGET=3, FL_CALIB_STICK_TARGET=4;
+
+function startCalibFloor(afterCalib){
+  flCalibPhase='puck';
+  flCalibPuckSamples=[];flCalibStickSamples=[];
+  flCalibAfter=afterCalib;
+  CALIB.floor.puck=null;CALIB.floor.sticks=[];CALIB.floor.ready=false;
+  document.getElementById('calib-floor-profile').style.display='none';
+  document.getElementById('fl-calib-preview-strip').style.display='none';
+  document.getElementById('btn-fl-calib-ok').style.display='none';
+  setFlCalibDesc('puck');
+  updateFlCalibDots();
+  showModal('m-floor-calib');
+}
+
+function setFlCalibDesc(phase){
+  const icon=document.getElementById('fl-calib-desc-icon');
+  const title=document.getElementById('fl-calib-desc-title');
+  const text=document.getElementById('fl-calib-desc-text');
+  if(phase==='puck'){
+    icon.textContent='🏒';
+    title.textContent='SCHRITT 1: PUCK / BALL';
+    text.innerHTML='Lege den <b>Puck oder Ball</b> gut sichtbar ins Kamerabild.<br>Dann <b>📸 Aufnehmen</b> drücken. ('+FL_CALIB_PUCK_TARGET+'×)';
+  } else if(phase==='stick'){
+    icon.textContent='🏑';
+    title.textContent='SCHRITT 2: SCHLÄGER';
+    text.innerHTML='Halte den <b>Schläger von oben</b> ins Kamerabild — verschiedene Positionen.<br>Dann <b>📸 Aufnehmen</b> drücken. ('+FL_CALIB_STICK_TARGET+'×)';
+  } else {
+    icon.textContent='✅';
+    title.textContent='KALIBRIERUNG ABGESCHLOSSEN';
+    text.innerHTML='Puck & Schläger wurden gespeichert.<br>Jetzt <b>✓ Fertig</b> drücken.';
+  }
+}
+
+function updateFlCalibDots(){
+  const dots=document.getElementById('calib-floor-dots');
+  dots.innerHTML='';
+  const target=flCalibPhase==='puck'?FL_CALIB_PUCK_TARGET:FL_CALIB_STICK_TARGET;
+  const done=flCalibPhase==='puck'?flCalibPuckSamples.length:flCalibStickSamples.length;
+  for(let i=0;i<target;i++){
+    const d=document.createElement('div');
+    d.className='calib-dot'+(i<done?' done':i===done?' floor-active':'');
+    dots.appendChild(d);
+  }
+}
+
+function showCalibPreview(blob, frameData, isStick){
+  const strip=document.getElementById('fl-calib-preview-strip');
+  const cv=document.getElementById('calib-floor-canvas');
+  const ctx=cv.getContext('2d');
+  // Scale frame to canvas
+  const tmpCv=document.createElement('canvas');
+  tmpCv.width=frameData.width;tmpCv.height=frameData.height;
+  tmpCv.getContext('2d').putImageData(frameData,0,0);
+  ctx.drawImage(tmpCv,0,0,cv.width,cv.height);
+  // Draw rect around detected blob
+  if(blob){
+    const sx=cv.width/frameData.width, sy=cv.height/frameData.height;
+    ctx.strokeStyle=isStick?'#ff6b35':'#7fff3a';
+    ctx.lineWidth=2;
+    ctx.strokeRect(blob.x0*sx, blob.y0*sy, blob.bw*sx, blob.bh*sy);
+    ctx.fillStyle=isStick?'rgba(255,107,53,.15)':'rgba(127,255,58,.15)';
+    ctx.fillRect(blob.x0*sx, blob.y0*sy, blob.bw*sx, blob.bh*sy);
+    // Label
+    ctx.fillStyle=isStick?'#ff6b35':'#7fff3a';
+    ctx.font='bold 9px sans-serif';
+    ctx.fillText(isStick?'SCHLÄGER':'PUCK', blob.x0*sx+2, blob.y0*sy-3);
+  }
+  strip.style.display='flex';
+  const count=flCalibPhase==='puck'?flCalibPuckSamples.length:flCalibStickSamples.length;
+  const target=flCalibPhase==='puck'?FL_CALIB_PUCK_TARGET:FL_CALIB_STICK_TARGET;
+  document.getElementById('calib-floor-status').textContent=
+    blob?`${isStick?'Schläger':'Puck'} erkannt ✓ (${count}/${target})`:'Kein Objekt klar erkannt — nochmal versuchen';
+}
+
+// Manual capture button
+document.getElementById('btn-fl-calib-capture').onclick=()=>{
+  const f=capFrame();if(!f)return;
+  const isStick=flCalibPhase==='stick';
+  const blob=analyseCalibFrame(f,{minSz:4});
+
+  showCalibPreview(blob, f, isStick);
+
+  if(!blob){return;} // Nutzer sieht Vorschau ohne Rahmen, kann nochmal drücken
+
+  if(flCalibPhase==='puck'){
+    flCalibPuckSamples.push({avgBr:blob.avgBr,n:blob.n,aspect:blob.aspect,compact:blob.compact,bw:blob.bw,bh:blob.bh,avgSat:blob.avgSat,x0:blob.x0,y0:blob.y0});
+    updateFlCalibDots();
+    if(flCalibPuckSamples.length>=FL_CALIB_PUCK_TARGET){
+      // Puck-Profil berechnen
+      const brs=flCalibPuckSamples.map(s=>s.avgBr);
+      const szs=flCalibPuckSamples.map(s=>s.n);
+      CALIB.floor.puck={
+        minBr:Math.min(...brs)-15,maxBr:Math.max(...brs)+15,
+        avgBr:brs.reduce((a,b)=>a+b,0)/brs.length,
+        minSz:Math.min(...szs)*0.4,maxSz:Math.max(...szs)*2.8,
+        avgSat:flCalibPuckSamples.reduce((a,s)=>a+(s.avgSat||0),0)/flCalibPuckSamples.length,
+        samples:flCalibPuckSamples.length
+      };
+      const prof=document.getElementById('calib-floor-profile');
+      prof.style.display='block';
+      prof.textContent=`Puck: Hell ${Math.round(CALIB.floor.puck.minBr)}–${Math.round(CALIB.floor.puck.maxBr)}  Größe ${Math.round(CALIB.floor.puck.minSz)}–${Math.round(CALIB.floor.puck.maxSz)}px`;
+      // Kurze Pause, dann weiter zu Schläger
+      setTimeout(()=>{
+        flCalibPhase='stick';
+        document.getElementById('calib-floor-profile').style.display='none';
+        setFlCalibDesc('stick');
+        updateFlCalibDots();
+        setSt('Schläger kalibrieren: von oben ins Bild halten → 📸');
+      },800);
+    }
+  } else {
+    // stick phase
+    flCalibStickSamples.push({avgBr:blob.avgBr,aspect:blob.aspect,compactness:blob.compact,bw:blob.bw,bh:blob.bh,x0:blob.x0,y0:blob.y0});
+    updateFlCalibDots();
+    if(flCalibStickSamples.length>=FL_CALIB_STICK_TARGET){
+      CALIB.floor.sticks=flCalibStickSamples.map(s=>({avgBr:s.avgBr,aspect:s.aspect,compactness:s.compactness}));
+      CALIB.floor.ready=true;
+      saveCalib();
+      const prof=document.getElementById('calib-floor-profile');
+      prof.style.display='block';
+      prof.textContent=`Schläger: ${CALIB.floor.sticks.length} Samples  Ø-Aspect ${(CALIB.floor.sticks.reduce((a,s)=>a+s.aspect,0)/CALIB.floor.sticks.length).toFixed(1)}`;
+      setFlCalibDesc('done');
+      document.getElementById('btn-fl-calib-ok').style.display='';
+      setSt('Kalibrierung abgeschlossen ✓');
+    }
+  }
+};
+
+document.getElementById('btn-fl-calib-retry').onclick=()=>{
+  flCalibPhase='puck';flCalibPuckSamples=[];flCalibStickSamples=[];
+  CALIB.floor.puck=null;CALIB.floor.sticks=[];CALIB.floor.ready=false;
+  document.getElementById('calib-floor-profile').style.display='none';
+  document.getElementById('fl-calib-preview-strip').style.display='none';
+  document.getElementById('btn-fl-calib-ok').style.display='none';
+  setFlCalibDesc('puck');updateFlCalibDots();
+  setSt('Kalibrierung zurückgesetzt');
+};
+
+document.getElementById('btn-fl-calib-ok').onclick=()=>{
+  saveCalib();hideAll();setFABFloor('ready');
+  setSt('Kalibrierung gespeichert ✓ — Training starten');
+  if(flCalibAfter) flCalibAfter();
+};
+
+document.getElementById('btn-fl-calib-skip').onclick=()=>{
+  hideAll();setFABFloor('ready');setSt('Kalibrierung übersprungen');
+  if(flCalibAfter) flCalibAfter();
+};
+
+// ═══════════════════════════════════════════════════════
+//  GOAL MODE STATE
+// ═══════════════════════════════════════════════════════
+const ST = {
+  screen:'welcome',
+  targets:[],
+  hits:0,shots:0,hitCooldown:0,
+  prevFrame:null,puckPos:null,animId:null,
+  zoom:{ level:1, nativeSupport:false, track:null },
+  settings:{ puckTracking:true,sound:true,debug:false,puckThresh:6,whiteThresh:185,puckMinSize:8,puckDarkMax:90 },
+  tr:{ mode:'free',showArrow:true,showGlow:true,seq:[],idx:0,curId:null,speedTime:5,timer:null,active:false }
+};
+
+// ═══════════════════════════════════════════════════════
+//  FLOOR MODE STATE
+// ═══════════════════════════════════════════════════════
+const FLOOR = {
+  camDeviceId: null,
+  cols: 4, rows: 4,
+  corners: [],      // [{x,y}] 4 points: TL,TR,BR,BL
+  cells: [],        // [{col,row,enabled}]
+  prevFrame: null,
+  puckPos: null,
+  animId: null,
+  tracking: false,
+  hits: 0, shots: 0, misses: 0,
+  hitCooldown: 0,
+  gameTimer: null,
+  gameTimeLeft: 0,
+  gameMode: 'random60',  // 'random60' | 'shuttle'
+  activeCell: null,   // {col,row}  — current target
+  shuttleA: null, shuttleB: null,  // for pendel mode
+  shuttleTimer: null,
+  shuttleInterval: 15,
+  cornerStep: 0,   // 0-3 during corner setup
+  settings: {
+    useColor: true,
+    puckThresh: 5,
+    puckMinSize: 10,
+    satMin: 35,        // min HSV saturation (%) for colored ball
+  }
+};
+
+// ═══════════════════════════════════════════════════════
+//  DOM
+// ═══════════════════════════════════════════════════════
+const video   = document.getElementById('video');
+const ov      = document.getElementById('ov');     const ovCtx = ov.getContext('2d');
+const ti      = document.getElementById('ti');     const tiCtx = ti.getContext('2d');
+const proc    = document.getElementById('proc');   const pCtx  = proc.getContext('2d',{willReadFrequently:true});
+const floorGC = document.getElementById('floor-grid-canvas'); const floorCtx = floorGC.getContext('2d');
+const scl     = document.getElementById('scl');
+const hfl     = document.getElementById('hfl');
+const hbdg    = document.getElementById('hbdg');
+const pdbg    = document.getElementById('pdbg');
+const seqbar  = document.getElementById('seqbar');
+const sbar    = document.getElementById('sbar');
+const zoomInd = document.getElementById('zoom-ind');
+const zoomHint= document.getElementById('zoom-hint');
+let hbTimer=null, tracking=false;
+
+// ═══════════════════════════════════════════════════════
+//  PANELS
+// ═══════════════════════════════════════════════════════
+const GOAL_MODALS=['m-welcome','m-confirm','m-settings','m-training','m-calib-goal'];
+const FLOOR_PANELS=['m-floor-cam','m-floor-setup','m-floor-corners','m-floor-cells','m-floor-calib','m-floor-training'];
+const ALL_PANELS=[...GOAL_MODALS,...FLOOR_PANELS];
+
+function showModal(id){
+  // Goal modals: full overlay — hide all others
+  GOAL_MODALS.forEach(m=>document.getElementById(m).classList.toggle('hidden',m!==id));
+  // Floor panels: hide all floor panels unless this one is a floor panel
+  FLOOR_PANELS.forEach(m=>document.getElementById(m).classList.toggle('hidden',m!==id));
+}
+function hideAll(){
+  ALL_PANELS.forEach(m=>document.getElementById(m).classList.add('hidden'));
+}
+
+function setScreen(s){
+  ST.screen=s;
+  const trk=s==='tracking';
+  document.getElementById('hud').style.display=trk?'flex':'none';
+  document.getElementById('fb-scan').style.display=['ready','confirm'].includes(s)?'':'none';
+  document.getElementById('fb-cam').style.display=(s==='welcome'&&APP_MODE==='goal')?'':'none';
+  document.getElementById('fb-gear').style.display=(trk||APP_MODE==='floor')?'none':'';
+  zoomHint.style.display=trk?'':'none';
+}
+function setFABFloor(state){
+  document.getElementById('fb-cam').style.display='none';
+  document.getElementById('fb-scan').style.display='none';
+  document.getElementById('fb-gear').style.display='none';
+  document.getElementById('fb-floor-corners').style.display=state==='setup'?'':'none';
+  document.getElementById('fb-floor-calib').style.display=state==='ready'?'':'none';
+  document.getElementById('fb-floor-start').style.display=state==='ready'?'':'none';
+  document.getElementById('fb-floor-back').style.display=state!=='cam'?'':'none';
+}
+function setSt(m){ sbar.textContent=m; }
+function updScore(){
+  document.getElementById('sH').textContent=APP_MODE==='floor'?FLOOR.hits:ST.hits;
+  document.getElementById('sS').textContent=APP_MODE==='floor'?FLOOR.shots:ST.shots;
+  const h=APP_MODE==='floor'?FLOOR.hits:ST.hits;
+  const s=APP_MODE==='floor'?FLOOR.shots:ST.shots;
+  document.getElementById('sP').textContent=s>0?Math.round(h/s*100)+'%':'–';
+}
+
+// ═══════════════════════════════════════════════════════
+//  RESIZE
+// ═══════════════════════════════════════════════════════
+function resize(){
+  const r=video.getBoundingClientRect();
+  [ov,ti,proc,floorGC].forEach(c=>{c.width=r.width;c.height=r.height;});
+}
+window.addEventListener('resize',()=>setTimeout(resize,200));
+screen.orientation?.addEventListener('change',()=>setTimeout(resize,350));
+
+// ═══════════════════════════════════════════════════════
+//  AUDIO
+// ═══════════════════════════════════════════════════════
+let aCtx;
+function beep(f=880,d=0.18,v=0.3){
+  try{
+    if(!aCtx) aCtx=new(window.AudioContext||window.webkitAudioContext)();
+    const o=aCtx.createOscillator(),g=aCtx.createGain();
+    o.connect(g);g.connect(aCtx.destination);
+    o.frequency.setValueAtTime(f,aCtx.currentTime);
+    o.frequency.exponentialRampToValueAtTime(f/4,aCtx.currentTime+d);
+    g.gain.setValueAtTime(v,aCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,aCtx.currentTime+d);
+    o.start();o.stop(aCtx.currentTime+d);
+  }catch(_){}
+}
+
+// ═══════════════════════════════════════════════════════
+//  ZOOM  (Goal mode)
+// ═══════════════════════════════════════════════════════
+let zoomIndTimer=null;
+function showZoomInd(level){
+  document.getElementById('pill-z').textContent='Zoom: '+level.toFixed(1)+'×';
+  zoomInd.textContent=level.toFixed(1)+'×';
+  zoomInd.classList.add('show');
+  clearTimeout(zoomIndTimer);
+  zoomIndTimer=setTimeout(()=>zoomInd.classList.remove('show'),1200);
+}
+async function applyZoom(level){
+  ST.zoom.level=level;showZoomInd(level);
+  const vt=ST.zoom.track;
+  if(ST.zoom.nativeSupport&&vt){
+    try{const caps=vt.getCapabilities();const clamped=Math.min(Math.max(level,caps.zoom.min),caps.zoom.max);await vt.applyConstraints({advanced:[{zoom:clamped}]});video.style.transform='';return;}catch(_){}
+  }
+  if(level>1){video.style.transform=`scale(${level})`;video.style.transformOrigin='center center';}
+  else{video.style.transform='';}
+}
+(function setupPinch(){
+  const el=document.getElementById('main');
+  let startDist=0,startZoom=1;
+  function dist(t){return Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);}
+  el.addEventListener('touchstart',e=>{if(e.touches.length===2){startDist=dist(e.touches);startZoom=ST.zoom.level;e.preventDefault();}},{passive:false});
+  el.addEventListener('touchmove',e=>{if(e.touches.length===2&&APP_MODE==='goal'){const d=dist(e.touches);applyZoom(Math.min(Math.max(startZoom*d/startDist,1),8));e.preventDefault();}},{passive:false});
+  el.addEventListener('touchend',e=>{if(e.touches.length<2)startDist=0;},{passive:true});
+})();
+
+// ═══════════════════════════════════════════════════════
+//  CAMERA — GOAL MODE
+// ═══════════════════════════════════════════════════════
+async function startCam(){
+  const errb=document.getElementById('cam-err'),rrow=document.getElementById('retry-row');
+  errb.classList.add('hidden');rrow.classList.add('hidden');setSt('Kamera wird gestartet…');
+  if(video.srcObject){video.srcObject.getTracks().forEach(t=>t.stop());video.srcObject=null;}
+  const tries=[
+    {video:{facingMode:{exact:'environment'},width:{ideal:1920},height:{ideal:1080}}},
+    {video:{facingMode:'environment',width:{ideal:1280},height:{ideal:720}}},
+    {video:true}
+  ];
+  for(const c of tries){
+    try{
+      const stream=await navigator.mediaDevices.getUserMedia(c);
+      video.srcObject=stream;
+      await new Promise((res,rej)=>{video.onloadedmetadata=res;setTimeout(()=>rej(new Error('to')),8000);});
+      await video.play();
+      const vt=stream.getVideoTracks()[0];ST.zoom.track=vt;
+      const caps=vt.getCapabilities?.();ST.zoom.nativeSupport=!!(caps&&caps.zoom);
+      setTimeout(resize,150);hideAll();setScreen('ready');
+      document.getElementById('fb-scan').style.display='';
+      document.getElementById('fb-cam').style.display='none';
+      setSt('Kamera bereit — 🤏 Zwei Finger zum Zoomen — dann Scannen');return;
+    }catch(e){
+      if(video.srcObject){video.srcObject.getTracks().forEach(t=>t.stop());video.srcObject=null;}
+      if(e.name==='NotAllowedError'||e.name==='PermissionDeniedError'){errb.textContent='⚠️ Kamera-Zugriff verweigert.\n\nChrome: Adressleiste → 🔒 → Kamera → Erlauben → Neu laden.';errb.classList.remove('hidden');rrow.classList.remove('hidden');setSt('Kamera verweigert');return;}
+      if(e.name==='NotFoundError'){errb.textContent='⚠️ Keine Kamera gefunden.';errb.classList.remove('hidden');return;}
+    }
+  }
+  errb.textContent='⚠️ Kamera nicht startbar. Neu laden.';errb.classList.remove('hidden');rrow.classList.remove('hidden');
+}
+
+// ═══════════════════════════════════════════════════════
+//  CAMERA — FLOOR MODE (with device selection)
+// ═══════════════════════════════════════════════════════
+async function loadCameraList(){
+  const list=document.getElementById('cam-list');
+  const errb=document.getElementById('fl-cam-err');
+  list.innerHTML='<div style="color:#556;font-size:.75rem;padding:8px">Kameras werden geladen…</div>';
+  errb.classList.add('hidden');
+  try{
+    // KEY FIX: cycle through ALL cameras to force browser to reveal them all.
+    // A single getUserMedia({video:true}) often only unlocks the default camera.
+    // We request each facingMode so Android exposes front+back+external.
+    const seenIds=new Set();
+    for(const constraint of[
+      {video:{facingMode:'environment'}},
+      {video:{facingMode:'user'}},
+      {video:true}
+    ]){
+      try{
+        const s=await navigator.mediaDevices.getUserMedia(constraint);
+        s.getTracks().forEach(t=>{seenIds.add(t.label);t.stop();});
+      }catch(_){}
+    }
+
+    const devs=await navigator.mediaDevices.enumerateDevices();
+    const cams=devs.filter(d=>d.kind==='videoinput');
+    list.innerHTML='';
+
+    if(!cams.length){
+      list.innerHTML='<div style="color:#f88;font-size:.75rem">Keine Kamera gefunden.</div>';
+      return;
+    }
+
+    // Sort: external cameras first (index > 0 is usually back/external on Android)
+    const sorted=[...cams].sort((a,b)=>{
+      const aExt=isExternalCam(a.label);
+      const bExt=isExternalCam(b.label);
+      return bExt-aExt;
+    });
+
+    sorted.forEach((cam,i)=>{
+      const el=document.createElement('div');el.className='cam-opt';
+      const label=cam.label||`Kamera ${i+1}`;
+      const isExt=isExternalCam(label);
+      // On Android, camera index 0 = front, 1 = back, 2+ = external USB
+      const indexHint=cams.indexOf(cam);
+      const typeHint=indexHint>=2?'Möglicherweise externe Kamera':
+                     label.toLowerCase().includes('front')||label.toLowerCase().includes('vorder')?'Frontkamera':
+                     label.toLowerCase().includes('back')||label.toLowerCase().includes('rear')||label.toLowerCase().includes('rück')?'Rückkamera':
+                     indexHint===0?'Kamera 1 (meist Frontkamera)':'Kamera '+(indexHint+1);
+      el.innerHTML=`<span class="cam-icon">${isExt?'🔌':indexHint>=2?'🔌':'📷'}</span>
+        <span><b>${label}</b><br>
+        <span style="font-size:.65rem;color:#556">${isExt?'Externe Kamera (empfohlen)':typeHint}</span></span>`;
+      el.onclick=()=>startFloorCam(cam.deviceId,label);
+      list.appendChild(el);
+    });
+
+    // If only 1 camera found, show a hint about USB
+    if(cams.length===1){
+      const hint=document.createElement('div');
+      hint.style.cssText='font-size:.68rem;color:#556;padding:8px 4px;line-height:1.5;';
+      hint.textContent='💡 Nur eine Kamera erkannt. USB-C Kamera angeschlossen? Erst anschließen, dann ↺ Aktualisieren tippen.';
+      list.appendChild(hint);
+    }
+  }catch(e){
+    errb.textContent='⚠️ Kamera-Zugriff verweigert. Bitte erlauben und Seite neu laden.';
+    errb.classList.remove('hidden');list.innerHTML='';
+  }
+}
+
+function isExternalCam(label){
+  const l=(label||'').toLowerCase();
+  return l.includes('usb')||l.includes('external')||l.includes('webcam')||
+         l.includes('logitech')||l.includes('elgato')||l.includes('brio')||
+         l.includes('c920')||l.includes('c922')||l.includes('c930')||
+         l.includes('streamcam')||l.includes('facecam')||l.includes('capture')||
+         l.includes('cam link')||l.includes('hdmi')||l.includes('obs')||
+         l.includes('virtual')||l.includes('dslr')||l.includes('mirrorless');
+}
+
+async function startFloorCam(deviceId, label){
+  setSt('Kamera wird gestartet…');
+  if(video.srcObject){video.srcObject.getTracks().forEach(t=>t.stop());video.srcObject=null;}
+  const errb=document.getElementById('fl-cam-err');
+  errb.classList.add('hidden');
+
+  // Try with exact deviceId first, then without 'exact' as fallback
+  const constraints=[
+    {video:{deviceId:{exact:deviceId},width:{ideal:1280},height:{ideal:720}}},
+    {video:{deviceId:deviceId,width:{ideal:1280},height:{ideal:720}}},
+    {video:{deviceId:{exact:deviceId}}},
+  ];
+
+  for(const c of constraints){
+    try{
+      const stream=await navigator.mediaDevices.getUserMedia(c);
+      video.srcObject=stream;
+      await new Promise((res,rej)=>{video.onloadedmetadata=res;setTimeout(()=>rej(new Error('timeout')),8000);});
+      await video.play();
+      FLOOR.camDeviceId=deviceId;
+      setTimeout(resize,150);
+      hideAll();
+      showModal('m-floor-setup');
+      setSt('Grid einrichten — '+label);
+      return;
+    }catch(e){
+      if(video.srcObject){video.srcObject.getTracks().forEach(t=>t.stop());video.srcObject=null;}
+    }
+  }
+  errb.textContent='⚠️ Kamera konnte nicht gestartet werden. Anderen Browser versuchen oder USB-Verbindung prüfen.';
+  errb.classList.remove('hidden');
+}
+
+document.getElementById('btn-fl-cam-refresh').onclick=loadCameraList;
+
+// ═══════════════════════════════════════════════════════
+//  FRAME CAPTURE
+// ═══════════════════════════════════════════════════════
+function capFrame(){
+  if(!proc.width||video.readyState<2)return null;
+  const z=ST.zoom.nativeSupport?1:ST.zoom.level;
+  if(APP_MODE==='goal'&&z>1){
+    const sw=video.videoWidth/z,sh=video.videoHeight/z;
+    const sx=(video.videoWidth-sw)/2,sy=(video.videoHeight-sh)/2;
+    pCtx.drawImage(video,sx,sy,sw,sh,0,0,proc.width,proc.height);
+  }else{
+    pCtx.drawImage(video,0,0,proc.width,proc.height);
+  }
+  return pCtx.getImageData(0,0,proc.width,proc.height);
+}
+
+// ═══════════════════════════════════════════════════════
+//  GOAL MODE — SCAN
+// ═══════════════════════════════════════════════════════
+async function runScan(){
+  hideAll();setScreen('scanning');scl.classList.add('on');setSt('Targets werden erkannt… Handy ruhig halten');
+  const all=[];let lastFrame=null;
+  for(let i=0;i<14;i++){
+    await new Promise(r=>setTimeout(r,80));
+    const f=capFrame();if(f){all.push(...detectBlobs(f));lastFrame=f;}
+  }
+  scl.classList.remove('on');
+  const snap=capFrame();
+  const cl=clusterBlobs(all);
+  ST.targets=cl.map((b,i)=>{
+    let thumbSrc='';
+    if(snap){
+      const tc=document.createElement('canvas');tc.width=120;tc.height=120;
+      const tx=tc.getContext('2d');
+      const pd=Math.round(Math.max(b.w,b.h)*0.3);
+      const sx=Math.max(0,b.x-pd),sy=Math.max(0,b.y-pd);
+      const sw=Math.min(proc.width-sx,b.w+pd*2),sh=Math.min(proc.height-sy,b.h+pd*2);
+      pCtx.putImageData(snap,0,0);tx.drawImage(proc,sx,sy,sw,sh,0,0,120,120);
+      thumbSrc=tc.toDataURL('image/jpeg',0.85);
+    }
+    return{id:i+1,x:b.x,y:b.y,w:b.w,h:b.h,hits:0,flashFrames:0,puckSeen:0,enabled:true,thumbSrc};
+  });
+  buildConfirmGrid();
+  document.getElementById('ctxt').textContent=ST.targets.length>0?`${ST.targets.length} mögliche Target(s) erkannt.\nAntippen zum Ab/Anwählen:`:'Keine Targets gefunden. Beleuchtung prüfen oder Weiss-Schwelle anpassen.';
+  document.getElementById('btn-ok').style.display=ST.targets.length>0?'':'none';
+  setScreen('confirm');showModal('m-confirm');
+  setSt(ST.targets.length>0?'Targets prüfen und START drücken':'Keine Targets gefunden');
+}
+
+function buildConfirmGrid(){
+  const grid=document.getElementById('tgrid');grid.innerHTML='';
+  ST.targets.forEach(t=>{
+    const div=document.createElement('div');div.className='thb '+(t.enabled?'active':'inactive');
+    div.innerHTML=`<img src="${t.thumbSrc}" alt="T${t.id}" onerror="this.style.display='none'"><div class="thb-overlay"><span class="thb-id">T${t.id}</span></div><div class="thb-check">${t.enabled?'✓':'✕'}</div>`;
+    div.onclick=()=>{t.enabled=!t.enabled;div.className='thb '+(t.enabled?'active':'inactive');div.querySelector('.thb-check').textContent=t.enabled?'✓':'✕';const any=ST.targets.some(x=>x.enabled);document.getElementById('btn-ok').style.display=any?'':'none';};
+    grid.appendChild(div);
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+//  GOAL MODE — BLOB DETECTION
+// ═══════════════════════════════════════════════════════
+function detectBlobs(img){
+  const{width:W,height:H,data:d}=img,wt=ST.settings.whiteThresh;
+  const bin=new Uint8Array(W*H);
+  for(let i=0;i<W*H;i++){
+    const mn=Math.min(d[i*4],d[i*4+1],d[i*4+2]),mx=Math.max(d[i*4],d[i*4+1],d[i*4+2]);
+    bin[i]=(mn>wt&&(mx===0?0:(mx-mn)/mx)<0.28)?1:0;
+  }
+  const vis=new Uint8Array(W*H),blobs=[];
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+    const idx=y*W+x;if(!bin[idx]||vis[idx])continue;
+    const q=[idx];vis[idx]=1;let x0=x,x1=x,y0=y,y1=y,n=0;
+    while(q.length){const ci=q.pop(),cx=ci%W,cy=(ci/W)|0;x0=Math.min(x0,cx);x1=Math.max(x1,cx);y0=Math.min(y0,cy);y1=Math.max(y1,cy);n++;for(const[a,b2]of[[-1,0],[1,0],[0,-1],[0,1]]){const nx=cx+a,ny=cy+b2;if(nx<0||nx>=W||ny<0||ny>=H)continue;const ni=ny*W+nx;if(!bin[ni]||vis[ni])continue;vis[ni]=1;q.push(ni);}}
+    const bw=x1-x0,bh=y1-y0,mn2=Math.min(W,H);
+    if(n>mn2*mn2*0.0006&&bw>mn2*0.02&&bh>mn2*0.02&&bw<mn2*0.58&&bh<mn2*0.58){const asp=bw/bh;if(asp>0.15&&asp<6.5)blobs.push({x:x0,y:y0,w:bw,h:bh,cx:x0+bw/2,cy:y0+bh/2,area:n});}
+  }
+  blobs.sort((a,b2)=>b2.area-a.area);return blobs.slice(0,8);
+}
+function clusterBlobs(blobs){
+  const cl=[];
+  for(const b of blobs){let found=false;for(const c of cl){if(Math.hypot(b.cx-c.cx,b.cy-c.cy)<Math.min(b.w,b.h,c.w,c.h)*2.4){c.x=Math.min(c.x,b.x);c.y=Math.min(c.y,b.y);c.w=Math.max(c.x+c.w,b.x+b.w)-c.x;c.h=Math.max(c.y+c.h,b.y+b.h)-c.y;c.cx=c.x+c.w/2;c.cy=c.y+c.h/2;c.v=(c.v||1)+1;found=true;break;}}if(!found)cl.push({...b,v:1});}
+  return cl.filter(c=>c.v>=2).slice(0,8);
+}
+
+// ═══════════════════════════════════════════════════════
+//  GOAL MODE — OVERLAY
+// ═══════════════════════════════════════════════════════
+function drawOverlay(){
+  const W=ov.width,H=ov.height;ovCtx.clearRect(0,0,W,H);tiCtx.clearRect(0,0,ti.width,ti.height);
+  const at=getActiveTarget();
+  for(const t of ST.targets){
+    if(!t.enabled)continue;
+    const fl=t.flashFrames>0;if(fl)t.flashFrames--;
+    const isAct=at&&at.id===t.id&&ST.tr.active;const pd=6;
+    if(isAct&&ST.tr.showGlow){const pulse=Math.sin(Date.now()/220)*5;ovCtx.save();ovCtx.shadowBlur=28;ovCtx.shadowColor='#00d4ff';ovCtx.strokeStyle='rgba(0,212,255,.85)';ovCtx.lineWidth=2.5;ovCtx.beginPath();ovCtx.roundRect(t.x-pd-pulse,t.y-pd-pulse,t.w+pd*2+pulse*2,t.h+pd*2+pulse*2,5);ovCtx.stroke();ovCtx.restore();}
+    ovCtx.save();ovCtx.strokeStyle=fl?'#00ff88':isAct?'#00d4ff':'rgba(255,255,255,.6)';ovCtx.fillStyle=fl?'rgba(0,255,136,.18)':isAct?'rgba(0,212,255,.09)':'rgba(255,255,255,.04)';if(fl){ovCtx.shadowBlur=18;ovCtx.shadowColor='#00ff88';}ovCtx.lineWidth=fl?3:isAct?2.5:1.5;ovCtx.beginPath();ovCtx.roundRect(t.x-pd,t.y-pd,t.w+pd*2,t.h+pd*2,4);ovCtx.fill();ovCtx.stroke();ovCtx.restore();
+    ovCtx.save();ovCtx.font='bold 13px Impact,sans-serif';ovCtx.fillStyle=fl?'#00ff88':isAct?'#00d4ff':'rgba(255,255,255,.85)';ovCtx.textAlign='center';ovCtx.fillText('T'+t.id+(t.hits>0?' ×'+t.hits:''),t.x+t.w/2,t.y-pd-4);ovCtx.restore();
+    if(t.puckSeen>0){t.puckSeen--;ovCtx.save();ovCtx.fillStyle='rgba(0,212,255,.85)';ovCtx.beginPath();ovCtx.arc(t.x+t.w-5,t.y+5,5,0,Math.PI*2);ovCtx.fill();ovCtx.restore();}
+  }
+  if(ST.puckPos){const p=ST.puckPos;ovCtx.save();ovCtx.strokeStyle='#00d4ff';ovCtx.lineWidth=2;ovCtx.beginPath();ovCtx.arc(p.x,p.y,p.r+4,0,Math.PI*2);ovCtx.stroke();ovCtx.beginPath();ovCtx.moveTo(p.x-p.r-8,p.y);ovCtx.lineTo(p.x+p.r+8,p.y);ovCtx.moveTo(p.x,p.y-p.r-8);ovCtx.lineTo(p.x,p.y+p.r+8);ovCtx.stroke();ovCtx.restore();}
+  drawArrow(at);
+}
+function drawArrow(target){
+  if(!ST.tr.active||!ST.tr.showArrow||!target)return;
+  const W=ti.width,H=ti.height;const tx=target.x+target.w/2,ty=target.y+target.h/2;const sx=W/2,sy=H*0.88;const dx=tx-sx,dy=ty-sy,len=Math.hypot(dx,dy);if(len<60)return;const ux=dx/len,uy=dy/len;const ex=tx-ux*44,ey=ty-uy*44;tiCtx.save();tiCtx.strokeStyle='rgba(0,212,255,.75)';tiCtx.fillStyle='rgba(0,212,255,.75)';tiCtx.lineWidth=3;tiCtx.setLineDash([10,6]);tiCtx.beginPath();tiCtx.moveTo(sx,sy);tiCtx.lineTo(ex,ey);tiCtx.stroke();tiCtx.setLineDash([]);const ang=Math.atan2(uy,ux);tiCtx.beginPath();tiCtx.moveTo(ex,ey);tiCtx.lineTo(ex-18*Math.cos(ang-.45),ey-18*Math.sin(ang-.45));tiCtx.lineTo(ex-18*Math.cos(ang+.45),ey-18*Math.sin(ang+.45));tiCtx.closePath();tiCtx.fill();tiCtx.font='bold 15px Impact,sans-serif';tiCtx.fillStyle='rgba(0,212,255,.95)';tiCtx.textAlign='center';tiCtx.fillText('T'+target.id,tx,target.y-14);tiCtx.restore();
+}
+function getActiveTarget(){
+  const tr=ST.tr,enabled=ST.targets.filter(t=>t.enabled);
+  if(!tr.active||tr.mode==='free'||!enabled.length)return null;
+  if(tr.mode==='random'||tr.mode==='speed')return enabled.find(t=>t.id===tr.curId)||null;
+  if(tr.mode==='sequence')return enabled.find(t=>t.id===tr.seq[tr.idx])||null;
+  return null;
+}
+
+// ═══════════════════════════════════════════════════════
+//  GOAL MODE — PUCK DETECTION
+// ═══════════════════════════════════════════════════════
+function detectPuck(curr){
+  if(!ST.prevFrame)return;
+  const W=curr.width,H=curr.height,cd=curr.data,pd=ST.prevFrame.data;
+  const th=ST.settings.puckThresh*12,minSz=ST.settings.puckMinSize,darkMax=ST.settings.puckDarkMax;
+  const mv=new Uint8Array(W*H);let tot=0;
+  for(let i=0;i<W*H;i++){if(Math.abs(cd[i*4]-pd[i*4])+Math.abs(cd[i*4+1]-pd[i*4+1])+Math.abs(cd[i*4+2]-pd[i*4+2])>th){mv[i]=1;tot++;}}
+  if(tot<15){ST.puckPos=null;return;}
+  const vis=new Uint8Array(W*H);let best=null;
+  for(let y=4;y<H-4;y+=2)for(let x=4;x<W-4;x+=2){
+    const idx=y*W+x;if(!mv[idx]||vis[idx])continue;
+    const br=(cd[idx*4]+cd[idx*4+1]+cd[idx*4+2])/3;if(br>darkMax)continue;
+    const q=[idx];vis[idx]=1;let x0=x,x1=x,y0=y,y1=y,n=0,ds=0;
+    while(q.length){const ci=q.pop(),cx=ci%W,cy=(ci/W)|0;x0=Math.min(x0,cx);x1=Math.max(x1,cx);y0=Math.min(y0,cy);y1=Math.max(y1,cy);n++;ds+=(cd[ci*4]+cd[ci*4+1]+cd[ci*4+2])/3;for(const[a,b2]of[[-1,0],[1,0],[0,-1],[0,1]]){const nx=cx+a,ny=cy+b2;if(nx<0||nx>=W||ny<0||ny>=H)continue;const ni=ny*W+nx;if(!mv[ni]||vis[ni])continue;vis[ni]=1;q.push(ni);}}
+    const bw=x1-x0,bh=y1-y0,avgD=ds/n;
+    if(n>minSz&&bw>minSz&&bh>minSz&&bw<130&&bh<130&&avgD<darkMax&&n/(bw*bh)>0.35){
+      const candidate={cx:x0+bw/2,cy:y0+bh/2,r:Math.max(bw,bh)/2,n,avgD};
+      // Calibrated profile: boost score if match, hard-reject only if WAY outside
+      if(CALIB.goal.puck){
+        const prof=CALIB.goal.puck;
+        if(avgD>prof.maxBr*2.5||n>prof.maxSz*5) continue; // clearly not the puck
+      }
+      if(!best||n>best.n)best=candidate;
+    }
+  }
+  ST.puckPos=best||null;
+  if(ST.settings.debug)pdbg.textContent=best?`Puck (${Math.round(best.cx)},${Math.round(best.cy)}) r=${Math.round(best.r)} dark=${Math.round(best.avgD)}`:'Kein Puck';
+  if(best){for(const t of ST.targets){if(!t.enabled)continue;const near=Math.max(t.w,t.h)*0.5+20;if(best.cx>t.x-near&&best.cx<t.x+t.w+near&&best.cy>t.y-near&&best.cy<t.y+t.h+near)t.puckSeen=Math.max(t.puckSeen,8);}}
+  if(ST.hitCooldown===0){for(const t of ST.targets){if(!t.enabled||!t.puckSeen)continue;if(best){const ins=10;if(best.cx>t.x-ins&&best.cx<t.x+t.w+ins&&best.cy>t.y-ins&&best.cy<t.y+t.h+ins){regHit(t);break;}}}}
+  if(ST.hitCooldown>0)ST.hitCooldown--;
+}
+
+function regHit(t){
+  t.hits++;t.flashFrames=32;t.puckSeen=0;ST.hits++;if(ST.shots<ST.hits)ST.shots=ST.hits;ST.hitCooldown=55;
+  updScore();beep(880,0.18,0.35);hfl.style.opacity=1;setTimeout(()=>hfl.style.opacity=0,180);
+  hbdg.textContent='TREFFER\nT'+t.id;hbdg.classList.add('show');clearTimeout(hbTimer);hbTimer=setTimeout(()=>hbdg.classList.remove('show'),1100);
+  setSt('Treffer! Target '+t.id+' – Total: '+ST.hits);
+  const at=getActiveTarget();if(ST.tr.active&&at&&at.id===t.id)advanceTr();
+}
+
+// ═══════════════════════════════════════════════════════
+//  GOAL MODE — TRAINING
+// ═══════════════════════════════════════════════════════
+function buildSeqBtns(){
+  const c=document.getElementById('seq-btns');c.innerHTML='';
+  ST.targets.filter(t=>t.enabled).forEach(t=>{const b=document.createElement('button');b.className='btn btg';b.style.cssText='padding:6px 12px;font-size:.78rem;';b.textContent='T'+t.id;b.onclick=()=>{ST.tr.seq.push(t.id);updSeqPrev();};c.appendChild(b);});
+  const cl=document.createElement('button');cl.className='btn btw';cl.style.cssText='padding:6px 10px;font-size:.72rem;';cl.textContent='✕ Löschen';cl.onclick=()=>{ST.tr.seq=[];updSeqPrev();};c.appendChild(cl);
+}
+function updSeqPrev(){document.getElementById('seq-prev').textContent=ST.tr.seq.length?'Sequenz: '+ST.tr.seq.map(id=>'T'+id).join(' → '):'(leer – Targets antippen)';}
+function startTrMode(){
+  const enabled=ST.targets.filter(t=>t.enabled);if(!enabled.length){setSt('Keine aktiven Targets!');hideAll();return;}
+  const tr=ST.tr;tr.active=true;tr.idx=0;
+  document.getElementById('pill-m').textContent={free:'Frei',random:'Zufällig',sequence:'Sequenz',speed:'Speed'}[tr.mode];
+  if(tr.mode==='random')pickRand();else if(tr.mode==='sequence'){if(!tr.seq.length)tr.seq=enabled.map(t=>t.id);updDots();}else if(tr.mode==='speed'){pickRand();startSpeed();}
+  hideAll();beep(660,0.1,0.2);
+}
+function pickRand(){const enabled=ST.targets.filter(t=>t.enabled);const others=enabled.filter(t=>t.id!==ST.tr.curId);const pool=others.length?others:enabled;if(pool.length)ST.tr.curId=pool[Math.floor(Math.random()*pool.length)].id;}
+function advanceTr(){
+  clearInterval(ST.tr.timer);ST.tr.timer=null;
+  setTimeout(()=>{const tr=ST.tr;if(tr.mode==='random'){pickRand();beep(660,0.1,0.2);}else if(tr.mode==='sequence'){tr.idx++;if(tr.idx>=tr.seq.length){tr.active=false;setSt('Sequenz fertig! 🎉');beep(1200,0.3,0.4);updDots();}else{updDots();beep(660,0.1,0.2);}}else if(tr.mode==='speed'){pickRand();startSpeed();beep(660,0.1,0.2);}},500);
+}
+function startSpeed(){
+  clearInterval(ST.tr.timer);let t2=ST.tr.speedTime;document.getElementById('sT').textContent=t2+'s';
+  ST.tr.timer=setInterval(()=>{t2--;document.getElementById('sT').textContent=t2>0?t2+'s':'–';if(t2<=0){clearInterval(ST.tr.timer);ST.tr.timer=null;beep(220,0.25,0.2);ST.shots++;updScore();setSt('Zeit! Nächstes Target…');pickRand();startSpeed();}},1000);
+}
+function updDots(){seqbar.innerHTML='';if(ST.tr.mode!=='sequence')return;ST.tr.seq.forEach((id,i)=>{const d=document.createElement('div');d.className='sdot';if(i<ST.tr.idx)d.classList.add('done');else if(i===ST.tr.idx)d.classList.add('cur');seqbar.appendChild(d);});}
+
+// ═══════════════════════════════════════════════════════
+//  GOAL MODE — MAIN LOOP
+// ═══════════════════════════════════════════════════════
+function loop(){
+  if(!tracking)return;
+  ST.animId=requestAnimationFrame(loop);
+  const f=capFrame();if(!f)return;
+  drawOverlay();if(ST.settings.puckTracking)detectPuck(f);ST.prevFrame=f;
+}
+function startTracking(){
+  const enabled=ST.targets.filter(t=>t.enabled);if(!enabled.length){setSt('Bitte mindestens 1 Target auswählen!');return;}
+  function doStart(){
+    ST.hitCooldown=0;ST.prevFrame=null;ST.puckPos=null;ST.targets.forEach(t=>{t.puckSeen=0;});
+    tracking=true;hideAll();setScreen('tracking');
+    document.getElementById('pill-t').textContent='Targets: '+enabled.length;
+    document.getElementById('pill-m').textContent='Frei';
+    setSt('Tracking aktiv – 🤏 Zwei Finger zum Zoomen – Schieß!');
+    buildSeqBtns();loop();
+  }
+  // First time: offer calibration
+  if(!CALIB.goal.ready){
+    startCalibGoal(doStart);
+  } else {
+    doStart();
+  }
+}
+function doReset(){
+  tracking=false;if(ST.animId)cancelAnimationFrame(ST.animId);clearInterval(ST.tr.timer);ST.tr.timer=null;ST.tr.active=false;
+  ST.targets=[];ST.hits=0;ST.shots=0;ST.prevFrame=null;ST.puckPos=null;ST.hitCooldown=0;updScore();
+  ovCtx.clearRect(0,0,ov.width,ov.height);tiCtx.clearRect(0,0,ti.width,ti.height);
+  seqbar.innerHTML='';document.getElementById('sT').textContent='–';hideAll();setScreen('ready');setSt('Zurückgesetzt – 🔍 Scannen drücken');
+}
+
+// ═══════════════════════════════════════════════════════
+//  FLOOR MODE — GRID SETUP
+// ═══════════════════════════════════════════════════════
+document.querySelectorAll('.gsp').forEach(el=>{
+  el.onclick=()=>{
+    document.querySelectorAll('.gsp').forEach(x=>x.classList.remove('sel'));el.classList.add('sel');
+    FLOOR.cols=+el.dataset.c;FLOOR.rows=+el.dataset.r;
+  };
+});
+
+document.getElementById('btn-fl-setup-ok').onclick=()=>{
+  FLOOR.corners=[];FLOOR.cornerStep=0;
+  hideAll();showModal('m-floor-corners');
+  document.getElementById('corner-instr').innerHTML='Tippe auf die <b>obere linke Ecke</b> des Spielfelds';
+  setSt('Ecke 1/4: Oben Links antippen');
+  enableCornerTap();
+};
+
+const CORNER_LABELS=['obere linke','obere rechte','untere rechte','untere linke'];
+const CORNER_POS=['oben links','oben rechts','unten rechts','unten links'];
+
+function enableCornerTap(){
+  const mainEl=document.getElementById('main');
+  // Sperre: 900ms nach Button-Klick + 400ms Debounce zwischen Ecken
+  let enableAt=Date.now()+900;
+  let lastTap=0;
+
+  function onTap(e){
+    const now=Date.now();
+    if(now<enableAt)return;          // Button-Tap ignorieren
+    if(now-lastTap<400)return;       // Doppel-Event (touch+click) ignorieren
+    if(FLOOR.cornerStep>=4)return;
+    lastTap=now;
+
+    const r=mainEl.getBoundingClientRect();
+    const touch=e.touches?e.touches[0]:e;
+    const x=touch.clientX-r.left,y=touch.clientY-r.top;
+    // FAB-Bereich unten ignorieren
+    if(y>r.height-70)return;
+
+    FLOOR.corners.push({x,y});
+    drawCornerDots();
+    FLOOR.cornerStep++;
+    if(FLOOR.cornerStep<4){
+      const lbl=CORNER_LABELS[FLOOR.cornerStep];
+      document.getElementById('corner-instr').innerHTML=`Tippe auf die <b>${lbl} Ecke</b> des Spielfelds`;
+      setSt(`Ecke ${FLOOR.cornerStep+1}/4: ${CORNER_POS[FLOOR.cornerStep]} antippen`);
+    } else {
+      mainEl.removeEventListener('touchstart',onTap);
+      mainEl.removeEventListener('click',onTap);
+      // Bestätigung anzeigen statt direkt weitergehen
+      showCornerConfirm();
+    }
+  }
+  mainEl.addEventListener('touchstart',onTap,{once:false,passive:true});
+  mainEl.addEventListener('click',onTap,{once:false});
+  mainEl._cornerTap=onTap;
+}
+
+function showCornerConfirm(){
+  document.getElementById('corner-instr').innerHTML=
+    '<span style="color:#7fff3a">✓ Alle 4 Ecken gesetzt!</span><br>'+
+    '<span style="font-size:.75rem;color:#aaa">Sieht das Spielfeld richtig aus?</span>';
+  document.getElementById('corner-confirm-btns').style.display='flex';
+  // Panel anklickbar machen für die Buttons
+  const panel=document.getElementById('m-floor-corners');
+  panel.style.pointerEvents='all';
+  document.getElementById('corner-panel-inner').style.pointerEvents='all';
+  setSt('Ecken bestätigen oder nochmal setzen');
+}
+
+document.getElementById('btn-corner-ok').onclick=()=>{
+  document.getElementById('m-floor-corners').style.pointerEvents='none';
+  document.getElementById('corner-panel-inner').style.pointerEvents='none';
+  document.getElementById('corner-confirm-btns').style.display='none';
+  hideAll();buildFloorCells();showModal('m-floor-cells');setFABFloor('setup');
+  setSt('Felder konfigurieren');
+};
+
+document.getElementById('btn-corner-retry').onclick=()=>{
+  FLOOR.corners=[];FLOOR.cornerStep=0;
+  document.getElementById('m-floor-corners').style.pointerEvents='none';
+  document.getElementById('corner-panel-inner').style.pointerEvents='none';
+  document.getElementById('corner-confirm-btns').style.display='none';
+  document.getElementById('corner-instr').innerHTML='Tippe auf die <b>obere linke Ecke</b> des Spielfelds';
+  floorCtx.clearRect(0,0,floorGC.width,floorGC.height);
+  setSt('Ecke 1/4: Oben Links antippen');
+  enableCornerTap();
+};
+
+function drawCornerDots(){
+  floorCtx.clearRect(0,0,floorGC.width,floorGC.height);
+  // Draw corner markers
+  FLOOR.corners.forEach((c,i)=>{
+    floorCtx.save();
+    floorCtx.fillStyle='rgba(127,255,58,.9)';
+    floorCtx.strokeStyle='#fff';
+    floorCtx.lineWidth=2;
+    floorCtx.beginPath();floorCtx.arc(c.x,c.y,12,0,Math.PI*2);floorCtx.fill();floorCtx.stroke();
+    floorCtx.fillStyle='#0a1a08';floorCtx.font='bold 11px sans-serif';floorCtx.textAlign='center';floorCtx.textBaseline='middle';
+    floorCtx.fillText(i+1,c.x,c.y);floorCtx.restore();
+  });
+  // Draw outline if 2+ corners
+  if(FLOOR.corners.length>=2){
+    floorCtx.save();floorCtx.strokeStyle='rgba(127,255,58,.5)';floorCtx.lineWidth=1.5;floorCtx.setLineDash([6,4]);
+    floorCtx.beginPath();floorCtx.moveTo(FLOOR.corners[0].x,FLOOR.corners[0].y);
+    for(let i=1;i<FLOOR.corners.length;i++)floorCtx.lineTo(FLOOR.corners[i].x,FLOOR.corners[i].y);
+    if(FLOOR.corners.length===4)floorCtx.closePath();
+    floorCtx.stroke();floorCtx.restore();
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  FLOOR MODE — PERSPECTIVE HELPERS
+// ═══════════════════════════════════════════════════════
+// Bilinear interpolation inside quadrilateral
+// corners: TL, TR, BR, BL
+function quadPoint(corners, u, v){
+  // u=0..1 (left to right), v=0..1 (top to bottom)
+  const [TL,TR,BR,BL] = corners;
+  const x = (1-u)*(1-v)*TL.x + u*(1-v)*TR.x + u*v*BR.x + (1-u)*v*BL.x;
+  const y = (1-u)*(1-v)*TL.y + u*(1-v)*TR.y + u*v*BR.y + (1-u)*v*BL.y;
+  return {x,y};
+}
+
+function getCellCorners(col, row){
+  const cols=FLOOR.cols, rows=FLOOR.rows;
+  const c=FLOOR.corners;
+  if(c.length<4)return null;
+  const u0=col/cols, u1=(col+1)/cols;
+  const v0=row/rows, v1=(row+1)/rows;
+  return [
+    quadPoint(c,u0,v0),
+    quadPoint(c,u1,v0),
+    quadPoint(c,u1,v1),
+    quadPoint(c,u0,v1)
+  ];
+}
+
+function getCellCenter(col,row){
+  const cols=FLOOR.cols,rows=FLOOR.rows;
+  const c=FLOOR.corners;if(c.length<4)return null;
+  return quadPoint(c,(col+0.5)/cols,(row+0.5)/rows);
+}
+
+// ═══════════════════════════════════════════════════════
+//  FLOOR MODE — CELL CONFIG
+// ═══════════════════════════════════════════════════════
+function buildFloorCells(){
+  FLOOR.cells=[];
+  for(let r=0;r<FLOOR.rows;r++)for(let c=0;c<FLOOR.cols;c++)FLOOR.cells.push({col:c,row:r,enabled:true});
+  renderCellGrid();
+}
+
+function renderCellGrid(){
+  const container=document.getElementById('floor-cell-grid');
+  const cellSize=Math.min(40, Math.floor(280/Math.max(FLOOR.cols,FLOOR.rows)));
+  container.style.display='inline-grid';
+  container.style.gridTemplateColumns=`repeat(${FLOOR.cols},${cellSize}px)`;
+  container.style.gap='2px';
+  container.innerHTML='';
+  for(let r=0;r<FLOOR.rows;r++){
+    for(let c=0;c<FLOOR.cols;c++){
+      const cell=FLOOR.cells.find(x=>x.col===c&&x.row===r);
+      const el=document.createElement('div');
+      el.style.cssText=`width:${cellSize}px;height:${cellSize}px;border-radius:3px;border:1px solid;cursor:pointer;transition:all .12s;display:flex;align-items:center;justify-content:center;font-size:${Math.max(8,cellSize/4)}px;`;
+      el.style.borderColor=cell.enabled?'#3a7a1a':'#333';
+      el.style.background=cell.enabled?'rgba(127,255,58,.15)':'rgba(0,0,0,.3)';
+      el.style.color=cell.enabled?'rgba(127,255,58,.6)':'#333';
+      const num=r*FLOOR.cols+c+1;
+      el.textContent=num;
+      el.onclick=()=>{cell.enabled=!cell.enabled;el.style.borderColor=cell.enabled?'#3a7a1a':'#333';el.style.background=cell.enabled?'rgba(127,255,58,.15)':'rgba(0,0,0,.3)';el.style.color=cell.enabled?'rgba(127,255,58,.6)':'#333';drawFloorGrid();};
+      container.appendChild(el);
+    }
+  }
+}
+
+document.getElementById('btn-fl-cells-reset').onclick=()=>{FLOOR.cells.forEach(c=>c.enabled=true);renderCellGrid();drawFloorGrid();};
+document.getElementById('btn-fl-cells-ok').onclick=()=>{
+  drawFloorGrid();
+  // Offer calibration if not yet done
+  if(!CALIB.floor.ready){
+    startCalibFloor(()=>{ setSt('Spielfeld bereit — Training starten'); });
+  } else {
+    hideAll();setFABFloor('ready');setSt('Spielfeld bereit — Training starten');
+  }
+};
+
+// ═══════════════════════════════════════════════════════
+//  FLOOR MODE — DRAW GRID OVERLAY
+// ═══════════════════════════════════════════════════════
+function drawFloorGrid(activeCell=null, shuttleA=null, shuttleB=null){
+  const ctx=floorCtx;ctx.clearRect(0,0,floorGC.width,floorGC.height);
+  if(FLOOR.corners.length<4)return;
+
+  for(const cell of FLOOR.cells){
+    const pts=getCellCorners(cell.col,cell.row);if(!pts)continue;
+    const isActive=activeCell&&activeCell.col===cell.col&&activeCell.row===cell.row;
+    const isShA=shuttleA&&shuttleA.col===cell.col&&shuttleA.row===cell.row;
+    const isShB=shuttleB&&shuttleB.col===cell.col&&shuttleB.row===cell.row;
+    const isTarget=isActive||isShA||isShB;
+
+    ctx.save();ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);
+    for(let i=1;i<4;i++)ctx.lineTo(pts[i].x,pts[i].y);ctx.closePath();
+
+    if(!cell.enabled){
+      ctx.strokeStyle='rgba(255,255,255,.1)';ctx.lineWidth=1;ctx.setLineDash([3,4]);ctx.stroke();ctx.setLineDash([]);
+    } else if(isTarget){
+      const pulse=0.5+0.5*Math.sin(Date.now()/200);
+      ctx.fillStyle=`rgba(127,255,58,${0.15+pulse*0.15})`;ctx.fill();
+      ctx.shadowBlur=20+pulse*10;ctx.shadowColor='#7fff3a';
+      ctx.strokeStyle=`rgba(127,255,58,${0.7+pulse*0.3})`;ctx.lineWidth=2.5;ctx.stroke();
+      ctx.shadowBlur=0;
+    } else {
+      ctx.fillStyle='rgba(255,255,255,.025)';ctx.fill();
+      ctx.strokeStyle='rgba(255,255,255,.3)';ctx.lineWidth=1;ctx.stroke();
+    }
+    ctx.restore();
+
+    // Cell number (small, top-left of cell)
+    if(cell.enabled){
+      const ctr=getCellCenter(cell.col,cell.row);if(!ctr)continue;
+      ctx.save();ctx.font=`bold ${Math.max(9,Math.min(14,floorGC.width/(FLOOR.cols*2.5)))}px Impact,sans-serif`;
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillStyle=isTarget?'rgba(127,255,58,.95)':'rgba(255,255,255,.4)';
+      ctx.fillText(cell.row*FLOOR.cols+cell.col+1,ctr.x,ctr.y);ctx.restore();
+    }
+  }
+
+  // Draw puck indicator
+  if(FLOOR.puckPos){
+    const p=FLOOR.puckPos;
+    ctx.save();ctx.strokeStyle='#7fff3a';ctx.lineWidth=2.5;
+    ctx.beginPath();ctx.arc(p.x,p.y,p.r+6,0,Math.PI*2);ctx.stroke();
+    ctx.strokeStyle='rgba(127,255,58,.4)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(p.x-p.r-12,p.y);ctx.lineTo(p.x+p.r+12,p.y);
+    ctx.moveTo(p.x,p.y-p.r-12);ctx.lineTo(p.x,p.y+p.r+12);ctx.stroke();ctx.restore();
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  FLOOR MODE — PUCK/BALL DETECTION
+// ═══════════════════════════════════════════════════════
+function detectFloorPuck(curr){
+  if(!FLOOR.prevFrame)return null;
+  const W=curr.width,H=curr.height,cd=curr.data,pd=FLOOR.prevFrame.data;
+  const th=(FLOOR.settings.puckThresh)*12,minSz=FLOOR.settings.puckMinSize;
+
+  // Motion map — step 2 pixels for speed
+  const mv=new Uint8Array(W*H);let tot=0;
+  for(let i=0;i<W*H;i+=2){
+    if(Math.abs(cd[i*4]-pd[i*4])+Math.abs(cd[i*4+1]-pd[i*4+1])+Math.abs(cd[i*4+2]-pd[i*4+2])>th){mv[i]=1;tot++;}
+  }
+  if(tot<6){FLOOR.puckPos=null;return null;}
+
+  const vis=new Uint8Array(W*H);let best=null;
+
+  // Scan step 3 for speed (was 2)
+  for(let y=4;y<H-4;y+=3)for(let x=4;x<W-4;x+=3){
+    const idx=y*W+x;if(!mv[idx]||vis[idx])continue;
+
+    const r=cd[idx*4],g=cd[idx*4+1],b=cd[idx*4+2];
+    const maxC=Math.max(r,g,b),minC=Math.min(r,g,b);
+    const br=(r+g+b)/3;
+
+    let isCandidate=false;
+    if(FLOOR.settings.useColor && maxC>0){
+      const sat=(maxC-minC)/maxC*100;
+      isCandidate=sat>=FLOOR.settings.satMin;
+    }
+    if(!isCandidate && br<80) isCandidate=true;
+    if(!isCandidate||br>220)continue;
+
+    const q=[idx];vis[idx]=1;let x0=x,x1=x,y0=y,y1=y,n=0,totalSat=0,totalBr=0;
+    while(q.length){
+      const ci=q.pop(),cx=ci%W,cy=(ci/W)|0;
+      x0=Math.min(x0,cx);x1=Math.max(x1,cx);y0=Math.min(y0,cy);y1=Math.max(y1,cy);n++;
+      const cr=cd[ci*4],cg=cd[ci*4+1],cb=cd[ci*4+2];
+      totalBr+=(cr+cg+cb)/3;
+      const cmx=Math.max(cr,cg,cb),cmn=Math.min(cr,cg,cb);
+      totalSat+=cmx>0?(cmx-cmn)/cmx*100:0;
+      // BFS: nur horizontale/vertikale Nachbarn (kein Diagonal = schneller)
+      for(const[a,b2]of[[-2,0],[2,0],[0,-2],[0,2]]){
+        const nx=cx+a,ny=cy+b2;if(nx<0||nx>=W||ny<0||ny>=H)continue;
+        const ni=ny*W+nx;if(!mv[ni]||vis[ni])continue;vis[ni]=1;q.push(ni);
+      }
+      // Early exit: wenn Blob schon zu groß, abbrechen
+      if(n>500)break;
+    }
+    const bw=x1-x0,bh=y1-y0;
+    const aspect=Math.max(bw,bh)/(Math.min(bw,bh)||1);
+    const compactness=n/(bw*bh||1);
+    const avgBr=n>0?totalBr/n:0;
+    if(n<minSz||bw<minSz/2||bh<minSz/2)continue;
+    if(bw>180||bh>180)continue;
+
+    const stickBlob={w:bw,h:bh,avgBr,aspect,compactness};
+    if(CALIB.floor.sticks.length>0){
+      if(matchesStickProfile(stickBlob))continue;
+    } else {
+      if(aspect>4.5)continue;
+      if(compactness<0.2)continue;
+    }
+
+    let profileBonus=1.0;
+    if(CALIB.floor.puck){
+      const prof=CALIB.floor.puck;
+      const TOL=0.55;
+      const brOk=avgBr>=prof.minBr*(1-TOL)&&avgBr<=prof.maxBr*(1+TOL);
+      const szOk=n>=prof.minSz*(1-TOL)&&n<=prof.maxSz*(1+TOL);
+      if(brOk&&szOk) profileBonus=2.0;
+      if(avgBr>prof.maxBr*2.5||n>prof.maxSz*5) continue;
+    }
+
+    const score=(compactness*100+n/5)*profileBonus;
+    if(!best||score>best.score)best={cx:x0+bw/2,cy:y0+bh/2,r:Math.max(bw,bh)/2,n,score,w:bw,h:bh};
+  }
+  FLOOR.puckPos=best||null;
+  return best||null;
+}
+
+// Point-in-quadrilateral test (using cross products)
+function pointInQuad(px,py,pts){
+  function cross(ax,ay,bx,by,cx,cy){return(bx-ax)*(cy-ay)-(by-ay)*(cx-ax);}
+  const signs=[];
+  for(let i=0;i<4;i++){const j=(i+1)%4;signs.push(cross(pts[i].x,pts[i].y,pts[j].x,pts[j].y,px,py)>=0);}
+  return signs.every(s=>s)||signs.every(s=>!s);
+}
+
+function findCellForPoint(px,py){
+  for(const cell of FLOOR.cells){
+    if(!cell.enabled)continue;
+    const pts=getCellCorners(cell.col,cell.row);if(!pts)continue;
+    if(pointInQuad(px,py,pts))return cell;
+  }
+  return null;
+}
+
+// ═══════════════════════════════════════════════════════
+//  FLOOR MODE — GAME LOGIC
+// ═══════════════════════════════════════════════════════
+function pickFloorRand(exclude=null){
+  const enabled=FLOOR.cells.filter(c=>c.enabled);
+  const pool=exclude?enabled.filter(c=>!(c.col===exclude.col&&c.row===exclude.row)):enabled;
+  if(!pool.length)return enabled[0]||null;
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+
+function pickShuttlePair(){
+  const enabled=FLOOR.cells.filter(c=>c.enabled);
+  if(enabled.length<2)return;
+  // Mindestabstand: 2 Felder (Chebyshev-Distanz) damit die Bewegung groß genug ist
+  const MIN_DIST=2;
+  let a,b,tries=0;
+  do{
+    a=enabled[Math.floor(Math.random()*enabled.length)];
+    b=enabled[Math.floor(Math.random()*enabled.length)];
+    tries++;
+    const dist=Math.max(Math.abs(a.col-b.col),Math.abs(a.row-b.row));
+    if(dist>=MIN_DIST) break;
+  }while(tries<50);
+  // Falls kein Paar mit Abstand gefunden (kleines Grid) → nimm irgendein anderes Feld
+  if(a.col===b.col&&a.row===b.row){
+    const others=enabled.filter(c=>!(c.col===a.col&&c.row===a.row));
+    if(others.length) b=others[Math.floor(Math.random()*others.length)];
+  }
+  FLOOR.shuttleA={...a};FLOOR.shuttleB={...b};
+  beep(660,0.12,0.25);
+}
+
+function startFloorGame(){
+  FLOOR.hits=0;FLOOR.shots=0;FLOOR.misses=0;FLOOR.hitCooldown=0;FLOOR.puckPos=null;FLOOR.prevFrame=null;
+  const time=parseInt(document.getElementById('fl-slTime').value)||60;
+  FLOOR.gameTimeLeft=time;
+  FLOOR.tracking=true;
+  updScore();
+  document.getElementById('sT').textContent=time+'s';
+  document.getElementById('floor-timer-bar').style.display='block';
+  document.getElementById('floor-timer-fill').style.width='100%';
+  const totalTime=time;
+
+  if(FLOOR.gameMode==='random60'){
+    FLOOR.activeCell=pickFloorRand();
+    setSt('Puck in das leuchtende Feld steuern!');
+  } else {
+    pickShuttlePair();
+    FLOOR.activeCell=FLOOR.shuttleA;
+    setSt('Puck zu Feld A → dann B → dann wechselt es!');
+    FLOOR.shuttleTimer=setInterval(()=>{
+      pickShuttlePair();
+      FLOOR.activeCell=FLOOR.shuttleA;
+      beep(440,0.15,0.2);
+      setSt('Neue Felder! Puck bewegen!');
+    }, (FLOOR.shuttleInterval||15)*1000);
+  }
+
+  FLOOR.gameTimer=setInterval(()=>{
+    FLOOR.gameTimeLeft--;
+    document.getElementById('sT').textContent=Math.max(0,FLOOR.gameTimeLeft)+'s';
+    document.getElementById('floor-timer-fill').style.width=(FLOOR.gameTimeLeft/totalTime*100)+'%';
+    if(FLOOR.gameTimeLeft<=0){
+      endFloorGame();
+    }
+  },1000);
+  hideAll();
+  floorLoop();
+}
+
+function endFloorGame(){
+  FLOOR.tracking=false;if(FLOOR.animId)cancelAnimationFrame(FLOOR.animId);
+  clearInterval(FLOOR.gameTimer);clearInterval(FLOOR.shuttleTimer);
+  FLOOR.activeCell=null;FLOOR.shuttleA=null;FLOOR.shuttleB=null;
+  document.getElementById('floor-timer-bar').style.display='none';
+  document.getElementById('sT').textContent='–';
+  beep(1200,0.3,0.5);
+  drawFloorGrid();
+  setSt(`Fertig! Treffer: ${FLOOR.hits}  Schüsse: ${FLOOR.shots}  Quote: ${FLOOR.shots>0?Math.round(FLOOR.hits/FLOOR.shots*100):0}%`);
+  setFABFloor('ready');
+}
+
+function floorHit(cell){
+  FLOOR.hits++;if(FLOOR.shots<FLOOR.hits)FLOOR.shots=FLOOR.hits;FLOOR.hitCooldown=40;
+  updScore();beep(880,0.2,0.4);
+  hfl.style.opacity=1;setTimeout(()=>hfl.style.opacity=0,200);
+  const num=cell.row*FLOOR.cols+cell.col+1;
+  hbdg.textContent='TREFFER\nF'+num;hbdg.classList.add('show');
+  clearTimeout(hbTimer);hbTimer=setTimeout(()=>hbdg.classList.remove('show'),1000);
+
+  if(FLOOR.gameMode==='random60'){
+    setTimeout(()=>{FLOOR.activeCell=pickFloorRand({col:cell.col,row:cell.row});beep(660,0.1,0.15);},400);
+  } else {
+    // Pendel: toggle between A and B
+    if(FLOOR.activeCell&&FLOOR.shuttleA&&FLOOR.shuttleB){
+      const isA=FLOOR.activeCell.col===FLOOR.shuttleA.col&&FLOOR.activeCell.row===FLOOR.shuttleA.row;
+      FLOOR.activeCell=isA?{...FLOOR.shuttleB}:{...FLOOR.shuttleA};
+      beep(660,0.1,0.2);
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  FLOOR MODE — MAIN LOOP
+// ═══════════════════════════════════════════════════════
+function floorLoop(){
+  if(!FLOOR.tracking)return;
+  FLOOR.animId=requestAnimationFrame(floorLoop);
+  const f=capFrame();if(!f)return;
+  const puck=detectFloorPuck(f);
+  drawFloorGrid(FLOOR.activeCell,FLOOR.shuttleA,FLOOR.shuttleB);
+  FLOOR.prevFrame=f;
+
+  if(puck&&FLOOR.hitCooldown===0){
+    const cell=findCellForPoint(puck.cx,puck.cy);
+    if(cell&&cell.enabled){
+      const isTarget=(FLOOR.gameMode==='random60'&&FLOOR.activeCell&&cell.col===FLOOR.activeCell.col&&cell.row===FLOOR.activeCell.row)||
+        (FLOOR.gameMode==='shuttle'&&(
+          (FLOOR.activeCell&&cell.col===FLOOR.activeCell.col&&cell.row===FLOOR.activeCell.row)
+        ));
+      if(isTarget)floorHit(cell);
+    }
+  }
+  if(FLOOR.hitCooldown>0)FLOOR.hitCooldown--;
+}
+
+// ═══════════════════════════════════════════════════════
+//  FLOOR FAB BUTTONS
+// ═══════════════════════════════════════════════════════
+document.getElementById('fb-floor-corners').onclick=()=>{
+  FLOOR.corners=[];FLOOR.cornerStep=0;
+  showModal('m-floor-corners');
+  document.getElementById('corner-instr').innerHTML='Tippe auf die <b>obere linke Ecke</b> des Spielfelds';
+  setSt('Ecke 1/4: Oben Links antippen');
+  enableCornerTap();
+};
+document.getElementById('fb-floor-calib').onclick=()=>{
+  const wasTracking=FLOOR.tracking;
+  if(wasTracking){FLOOR.tracking=false;cancelAnimationFrame(FLOOR.animId);}
+  CALIB.floor.ready=false;
+  flCalibPuckSamples=[];flCalibStickSamples=[];
+  startCalibFloor(()=>{
+    setSt('Kalibrierung gespeichert — Training starten');
+    if(wasTracking){FLOOR.tracking=true;floorLoop();}
+  });
+};
+document.getElementById('fb-floor-start').onclick=()=>{
+  showModal('m-floor-training');
+};
+document.getElementById('fb-floor-back').onclick=()=>{
+  if(FLOOR.tracking){endFloorGame();}
+  else{hideAll();showModal('m-floor-setup');setFABFloor('cam');}
+};
+
+// Floor training modal
+document.querySelectorAll('.fl-trc').forEach(el=>{
+  el.onclick=()=>{document.querySelectorAll('.fl-trc').forEach(x=>x.classList.remove('sel'));el.classList.add('sel');FLOOR.gameMode=el.dataset.fm;};
+});
+document.getElementById('fl-slTime').oninput=function(){document.getElementById('fl-slTimev').textContent=this.value;};
+document.getElementById('fl-slShuttle').oninput=function(){FLOOR.shuttleInterval=+this.value;document.getElementById('fl-slShuttlev').textContent=this.value;};
+
+document.getElementById('btn-fl-tr-start').onclick=()=>{
+  if(!FLOOR.cells.filter(c=>c.enabled).length){setSt('Keine Felder aktiv!');hideAll();return;}
+  startFloorGame();
+};
+document.getElementById('btn-fl-tr-cancel').onclick=()=>{hideAll();setFABFloor('ready');};
+
+// Floor settings
+document.getElementById('fl-tog-color').onclick=function(){this.classList.toggle('on');FLOOR.settings.useColor=this.classList.contains('on');};
+document.getElementById('fl-slPT').oninput=function(){FLOOR.settings.puckThresh=+this.value;document.getElementById('fl-slPTv').textContent=this.value;};
+document.getElementById('fl-slPM').oninput=function(){FLOOR.settings.puckMinSize=+this.value;document.getElementById('fl-slPMv').textContent=this.value;};
+document.getElementById('fl-slSat').oninput=function(){FLOOR.settings.satMin=+this.value;document.getElementById('fl-slSatv').textContent=this.value;};
+
+// ═══════════════════════════════════════════════════════
+//  GOAL MODE EVENTS
+// ═══════════════════════════════════════════════════════
+document.getElementById('btn-cam').onclick=startCam;
+document.getElementById('btn-retry').onclick=startCam;
+document.getElementById('fb-cam').onclick=startCam;
+document.getElementById('fb-scan').onclick=runScan;
+document.getElementById('fb-gear').onclick=()=>showModal('m-settings');
+document.getElementById('btn-ok').onclick=startTracking;
+document.getElementById('btn-rescan').onclick=runScan;
+document.getElementById('hbtn-tr').onclick=()=>{buildSeqBtns();updSeqPrev();showModal('m-training');};
+document.getElementById('hbtn-st').onclick=()=>showModal('m-settings');
+document.getElementById('hbtn-cl').onclick=()=>{
+  // Recalibrate mid-session: pause tracking temporarily
+  const wasTracking=tracking;
+  tracking=false;
+  if(ST.animId)cancelAnimationFrame(ST.animId);
+  CALIB.goal.ready=false;
+  calibGoalSamples=[];
+  startCalibGoal(()=>{
+    if(wasTracking){tracking=true;loop();}
+  });
+};
+document.getElementById('hbtn-rs').onclick=doReset;
+document.getElementById('btn-sc').onclick=hideAll;
+document.getElementById('btn-trs').onclick=startTrMode;
+document.getElementById('btn-trc').onclick=hideAll;
+document.querySelectorAll('.trc').forEach(c=>{c.onclick=()=>{document.querySelectorAll('.trc').forEach(x=>x.classList.remove('sel'));c.classList.add('sel');ST.tr.mode=c.dataset.m;document.getElementById('seq-ed').style.display=ST.tr.mode==='sequence'?'block':'none';document.getElementById('spd-ed').style.display=ST.tr.mode==='speed'?'block':'none';};});
+[['tog-puck','puckTracking',true],['tog-sound','sound',true],['tog-debug','debug',false],['tog-arrow',null,true],['tog-glow',null,true]].forEach(([id,key,def])=>{
+  const el=document.getElementById(id);if(def)el.classList.add('on');
+  el.onclick=()=>{el.classList.toggle('on');const on=el.classList.contains('on');if(key)ST.settings[key]=on;else if(id==='tog-arrow')ST.tr.showArrow=on;else if(id==='tog-glow')ST.tr.showGlow=on;if(id==='tog-debug')pdbg.style.display=on?'block':'none';};
+});
+document.getElementById('slW').oninput=function(){ST.settings.whiteThresh=+this.value;document.getElementById('slWv').textContent=this.value;document.getElementById('slW2').value=this.value;document.getElementById('slW2v').textContent=this.value;};
+document.getElementById('slW2').oninput=function(){ST.settings.whiteThresh=+this.value;document.getElementById('slW2v').textContent=this.value;document.getElementById('slW').value=this.value;document.getElementById('slWv').textContent=this.value;};
+document.getElementById('slPT').oninput=function(){ST.settings.puckThresh=+this.value;document.getElementById('slPTv').textContent=this.value;};
+document.getElementById('slPM').oninput=function(){ST.settings.puckMinSize=+this.value;document.getElementById('slPMv').textContent=this.value;};
+document.getElementById('slPD').oninput=function(){ST.settings.puckDarkMax=+this.value;document.getElementById('slPDv').textContent=this.value;};
+document.getElementById('slSP').oninput=function(){ST.tr.speedTime=+this.value;document.getElementById('slSPv').textContent=this.value;};
+
+// ═══════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════
+// Start on launcher — no auto-init
+setSt('Modus wählen…');
+
+// ═══════════════════════════════════════════════════════
+//  VOLLBILD + SERVICE WORKER
+// ═══════════════════════════════════════════════════════
+
+// Vollbild beim Start versuchen (Android Chrome)
+function tryFullscreen(){
+  const el=document.documentElement;
+  if(el.requestFullscreen) el.requestFullscreen().catch(()=>{});
+  else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+}
+document.addEventListener('click',function onFirst(){
+  tryFullscreen();
+  document.removeEventListener('click',onFirst);
+},{once:true});
+
+// Service Worker registrieren (offline + PWA Install)
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
